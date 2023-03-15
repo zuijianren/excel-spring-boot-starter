@@ -125,7 +125,7 @@ public class ExcelWriter {
 
             int rowPosition = 0; // 行号
 
-            XSSFSheet sheet = xssfWorkbook.createSheet();
+            XSSFSheet sheet = xssfWorkbook.createSheet(sheetConfig.getSheetName());
 
             // 首行创建
             if (sheetConfig.isShowSheetName()) {
@@ -202,7 +202,7 @@ public class ExcelWriter {
 
             List<PropertyConfig> propertyConfigList = sheetConfig.getPropertyConfigList();
 
-//            int i = writeData(sheet, rowPosition, colPosition, data, propertyConfigList);
+            int i = writeData(sheet, rowPosition, colPosition, data, propertyConfigList);
         }
     }
 
@@ -218,6 +218,7 @@ public class ExcelWriter {
      */
     private int writeData(XSSFSheet sheet, int rowPosition, int colPosition, Object data, List<PropertyConfig> propertyConfigList) {
         int rowNumCount = 0; // 统计当前数据所占行数
+        List<Integer> singleColumnList = new ArrayList<>(); // 存储非multi的列
         for (PropertyConfig propertyConfig : propertyConfigList) {
             // 获取 对应数据
             Field field = propertyConfig.getField();
@@ -230,10 +231,20 @@ public class ExcelWriter {
 
             // 写入数据
             if (!propertyConfig.isMulti()) {
-                // 普通属性  直接写入 并且 colPosition 加1
                 // todo ExcelConverter 调用及实现
                 // todo 空值 替代值 处理
-                writeCell(sheet, rowPosition, colPosition++, value, propertyConfig.getType());
+                if (propertyConfig.isNested()) {
+                    // 嵌套属性则依次递归调用当前方法  依次写入
+                    writeData(sheet, rowPosition, colPosition, value, propertyConfig.getChildPropertyConfigList());
+                    colPosition += propertyConfig.getColNum();
+                    for (int i = colPosition - propertyConfig.getColNum(); i < colPosition; i++) {
+                        singleColumnList.add(i);
+                    }
+                } else {
+                    // 普通属性  直接写入 并且 colPosition 加1
+                    writeCell(sheet, rowPosition, colPosition++, value, propertyConfig.getType());
+                    singleColumnList.add(colPosition - 1);
+                }
                 rowNumCount = Math.max(rowNumCount, 1); // 仅占一行
             } else {
                 Collection collection = (Collection) value; // 强转为 集合
@@ -259,9 +270,12 @@ public class ExcelWriter {
                         }
                         rowNumCount = Math.max(rowNumCount, totalChildRowNum);
                     }
-                    colPosition += propertyConfig.getChildPropertyConfigList().size(); // 写入完成后 列数 对应 增加
+                    colPosition += propertyConfig.getColNum(); // 写入完成后 列数 对应 增加
                 }
             }
+        }
+        for (Integer mergeColPosition : singleColumnList) {
+            mergeRowCell(sheet, rowPosition, mergeColPosition, rowNumCount);
         }
         return rowNumCount;
     }

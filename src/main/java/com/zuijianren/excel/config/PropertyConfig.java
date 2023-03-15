@@ -30,6 +30,12 @@ public class PropertyConfig implements Comparable<PropertyConfig> {
 
     /**
      * 当前属性是否为集合
+     * <p>
+     * 该属性受注释对象影响
+     * <p>
+     * 果标注的对象同时 nested 属性为 true, 并且该对象存在 ExcelSheet 注解, 且其中存在属性为 multi 的对象, 则 multi 属性即使没有被声明为 true, 最终也会被解析为 true
+     * <p>
+     * ps:  multi 下有 multi 属性不影响解析
      */
     private boolean multi;
 

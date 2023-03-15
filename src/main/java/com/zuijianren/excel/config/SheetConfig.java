@@ -40,6 +40,10 @@ public class SheetConfig {
      */
     private List<PropertyConfig> propertyConfigList;
 
+    /**
+     * 对象中是否有字段含有 multi 属性
+     */
+    private boolean hasMulti;
 
     /**
      * 根据当前配置 计算列数

@@ -33,9 +33,10 @@ public class ExcelExportUtilTest {
         Student student2 = new Student(2, 19, "姜辞旧2");
 
         teacher = new Teacher(1, 28, "姜老师");
+        Teacher2 teacher2 = new Teacher2(1, 28, "姜老师");
         teacher.setNickNameList(Arrays.asList("小姜", "老姜"));
         teacher.setStudentList(Arrays.asList(student, student2));
-        teacher.setTeacher2(teacher);
+        teacher.setTeacher2(teacher2);
     }
 
     @Test

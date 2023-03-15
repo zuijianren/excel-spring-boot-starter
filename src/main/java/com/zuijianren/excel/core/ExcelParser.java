@@ -33,6 +33,8 @@ public class ExcelParser {
 
     /**
      * 获取 sheet 表配置
+     * <p>
+     * todo 循环依赖问题解决
      *
      * @param clazz 对应对象
      * @return sheet 表配置
@@ -65,17 +67,33 @@ public class ExcelParser {
         ExcelSheet sheetAnnotation = clazz.getAnnotation(ExcelSheet.class);
         String sheetName = sheetAnnotation.value(); // 获取 sheet 名
         Field[] fields = clazz.getDeclaredFields();
+
+        int multiNum = 0; // multi 属性统计
+        Field multiFieldCache = null; // multi 属性缓存  用于提示错误
+
         for (Field field : fields) {
             field.setAccessible(true);
+            PropertyConfig propertyConfig = null;
             if (field.isAnnotationPresent(ExcelProperty.class)) {
-                PropertyConfig propertyConfig = parsePropertyConfig(field);
-                propertyConfigList.add(propertyConfig);
+                propertyConfig = parsePropertyConfig(field);
             } else if (field.isAnnotationPresent(ExcelMultiProperty.class)) {
-                // todo  multi 属性最大为1   超过应进行报错（不知道如何展示这种情况）
-                PropertyConfig propertyConfig = parseMultiPropertyConfig(field);
-                propertyConfigList.add(propertyConfig);
+                propertyConfig = parseMultiPropertyConfig(field);
+            } else {
+                // 忽略未添加 ExcelProperty 或者 ExcelMultiProperty 注解的属性
+                continue;
             }
-            // 忽略未添加 ExcelProperty 或者 ExcelMultiProperty 注解的属性
+            propertyConfigList.add(propertyConfig);
+            /*
+             * 一个 Sheet 对象仅允许有一个 multi 属性(multi属性中可以继续持有multi属性, 不进行限制 即 一定程度上可以多次一对多)
+             * 否则 会展示异常 因此 此处直接报错
+             */
+            if (propertyConfig.isMulti()) {
+                multiNum++;
+                if (multiNum >= 2) {
+                    throw new ParserException("一个导出类仅允许拥有一个multi属性. 当前导出类存在两个multi属性: [" + field.getName() + ", " + multiFieldCache.getName() + "]");
+                }
+                multiFieldCache = field;
+            }
         }
 
         // 根据 order 进行排序
@@ -85,6 +103,7 @@ public class ExcelParser {
         SheetConfig sheetConfig = SheetConfig.builder()
                 .sheetName(sheetName)
                 .propertyConfigList(propertyConfigList)
+                .hasMulti(multiNum != 0)
                 .build();
 
         // 存入缓存
@@ -104,36 +123,39 @@ public class ExcelParser {
             throw new ParserException(field.getName() + "属性不是集合类, 无法使用ExcelMultiProperty注解.");
         }
 
+        // 获取 注解 进行解析
+        ExcelMultiProperty multiPropertyAnnotation = field.getAnnotation(ExcelMultiProperty.class);
+
         // 获取 泛型
         ParameterizedType type = (ParameterizedType) field.getGenericType();
         Class<?> genericClass = (Class<?>) type.getActualTypeArguments()[0];
 
-        List<PropertyConfig> propertyConfigList = new ArrayList<>();
-
-        if (genericClass.isAnnotationPresent(ExcelSheet.class)) {
-            SheetConfig sheetConfig = this.getSheetConfig(genericClass);
-            propertyConfigList = sheetConfig.getPropertyConfigList();
+        List<PropertyConfig> childPropertyConfigList = new ArrayList<>();
+        if (multiPropertyAnnotation.nested()) {
+            if (genericClass.isAnnotationPresent(ExcelSheet.class)) {
+                SheetConfig sheetConfig = this.getSheetConfig(genericClass);
+                childPropertyConfigList = sheetConfig.getPropertyConfigList();
+            } else {
+                throw new ParserException(field.getName() + "不支持 nested 属性. 需要对应对象使用 ExcelSheet 注解才能使用");
+            }
         }
 
-
-        // 获取 注解 进行解析
-        ExcelMultiProperty multiPropertyAnnotation = field.getAnnotation(ExcelMultiProperty.class);
-
         // 创建 propertyConfig 对象
-        PropertyConfig propertyConfig = PropertyConfig.builder()
+        return PropertyConfig.builder()
+                // 基础属性
                 .order(multiPropertyAnnotation.order())
                 .value(multiPropertyAnnotation.value())
-                .converter(multiPropertyAnnotation.converter())
-                .showCurrentName(multiPropertyAnnotation.showCurrentName())
-                .nested(multiPropertyAnnotation.nested())
-                .multi(true)
-                .childPropertyConfigList(propertyConfigList)
                 .field(field)
                 .type(genericClass)
+                // 转换器
+                .converter(multiPropertyAnnotation.converter())
+                // 内嵌属性相关
+                .nested(multiPropertyAnnotation.nested())
+                .showCurrentName(multiPropertyAnnotation.showCurrentName())
+                .childPropertyConfigList(childPropertyConfigList)
+                // 集合属性
+                .multi(true)
                 .build();
-
-
-        return propertyConfig;
     }
 
     /**
@@ -145,18 +167,36 @@ public class ExcelParser {
         // 获取 注解 进行解析
         ExcelProperty propertyAnnotation = field.getAnnotation(ExcelProperty.class);
 
+        Class<?> type = field.getType(); // 获取属性类型
+        boolean hasMulti = false; // 当前 field 是否含有 multi 属性
+
+        // nested 属性解析
+        List<PropertyConfig> childPropertyConfigList = null; // 子属性集合 (如果为内嵌属性, 则赋值)
+        if (propertyAnnotation.nested()) {
+            if (type.isAnnotationPresent(ExcelSheet.class)) {
+                SheetConfig sheetConfig = this.getSheetConfig(type);
+                childPropertyConfigList = sheetConfig.getPropertyConfigList();
+                hasMulti = sheetConfig.isHasMulti();
+            } else {
+                throw new ParserException(field.getName() + "不支持 nested 属性. 需要对应对象使用 ExcelSheet 注解才能使用");
+            }
+        }
+
         // 创建 propertyConfig 对象
-        PropertyConfig propertyConfig = PropertyConfig.builder()
+        return PropertyConfig.builder()
+                // 基础属性
                 .order(propertyAnnotation.order())
                 .value(propertyAnnotation.value())
+                .field(field)
+                .type(type)
+                // 转换器
                 .converter(propertyAnnotation.converter())
+                // 内嵌属性相关
                 .showCurrentName(propertyAnnotation.showCurrentName())
                 .nested(propertyAnnotation.nested())
-                .multi(false)
-                .field(field)
-                .type(field.getType())
+                .childPropertyConfigList(childPropertyConfigList)
+                // 集合属性
+                .multi(hasMulti)
                 .build();
-
-        return propertyConfig;
     }
 }

@@ -13,7 +13,7 @@ import java.util.List;
  */
 @ExcelSheet("教师表")
 @Data
-public class Teacher {
+public class Teacher2 {
 
     private Integer id;
     @ExcelProperty(value = {"年龄"})
@@ -24,16 +24,12 @@ public class Teacher {
     private List<String> nickNameList;
 
 
-    @ExcelMultiProperty(value = "学生", nested = true, showCurrentName = true)
-    private List<Student> studentList;
 
     @ExcelProperty(value = {"名字"})
     private String name;
 
-    @ExcelProperty(value = {"教师"}, nested = true, showCurrentName = true)
-    private Teacher2 teacher2;
 
-    public Teacher(Integer id, Integer age, String name) {
+    public Teacher2(Integer id, Integer age, String name) {
         this.id = id;
         this.age = age;
         this.name = name;

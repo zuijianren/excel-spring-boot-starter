@@ -18,14 +18,20 @@ public class Teacher {
     private Integer id;
     @ExcelProperty(value = {"年龄"})
     private Integer age;
+
+
+    //    @ExcelMultiProperty(value = "昵称")
+    private List<String> nickNameList;
+
+
+    @ExcelMultiProperty(value = "学生", nested = true, showCurrentName = true)
+    private List<Student> studentList;
+
     @ExcelProperty(value = {"名字"})
     private String name;
 
-    @ExcelMultiProperty(value = "昵称")
-    private List<String> nickNameList;
-
-    @ExcelMultiProperty(value = "管理的学生", nested = true)
-    private List<Student> studentList;
+    @ExcelProperty(value = {"教师"}, nested = true)
+    private Teacher teacher2;
 
     public Teacher(Integer id, Integer age, String name) {
         this.id = id;

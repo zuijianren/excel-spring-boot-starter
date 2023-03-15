@@ -11,11 +11,11 @@ import lombok.Data;
 @ExcelSheet("学生表")
 @Data
 public class Student {
-
+    @ExcelProperty(value = {"id"}, order = 0)
     private Integer id;
-    @ExcelProperty(value = {"年龄"}, order = 2)
+    @ExcelProperty(value = {"学生", "年龄"}, order = 2)
     private Integer age;
-    @ExcelProperty(value = {"名字"}, order = 1)
+    @ExcelProperty(value = {"学生", "名字"}, order = 1)
     private String name;
 
     public Student(Integer id, Integer age, String name) {

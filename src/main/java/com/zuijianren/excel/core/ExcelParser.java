@@ -66,10 +66,12 @@ public class ExcelParser {
         String sheetName = sheetAnnotation.value(); // 获取 sheet 名
         Field[] fields = clazz.getDeclaredFields();
         for (Field field : fields) {
+            field.setAccessible(true);
             if (field.isAnnotationPresent(ExcelProperty.class)) {
                 PropertyConfig propertyConfig = parsePropertyConfig(field);
                 propertyConfigList.add(propertyConfig);
             } else if (field.isAnnotationPresent(ExcelMultiProperty.class)) {
+                // todo  multi 属性最大为1   超过应进行报错（不知道如何展示这种情况）
                 PropertyConfig propertyConfig = parseMultiPropertyConfig(field);
                 propertyConfigList.add(propertyConfig);
             }
@@ -121,10 +123,13 @@ public class ExcelParser {
         PropertyConfig propertyConfig = PropertyConfig.builder()
                 .order(multiPropertyAnnotation.order())
                 .value(multiPropertyAnnotation.value())
-                .nested(multiPropertyAnnotation.nested())
                 .converter(multiPropertyAnnotation.converter())
+                .showCurrentName(multiPropertyAnnotation.showCurrentName())
+                .nested(multiPropertyAnnotation.nested())
                 .multi(true)
                 .childPropertyConfigList(propertyConfigList)
+                .field(field)
+                .type(genericClass)
                 .build();
 
 
@@ -145,8 +150,11 @@ public class ExcelParser {
                 .order(propertyAnnotation.order())
                 .value(propertyAnnotation.value())
                 .converter(propertyAnnotation.converter())
+                .showCurrentName(propertyAnnotation.showCurrentName())
+                .nested(propertyAnnotation.nested())
                 .multi(false)
-                .nested(false)
+                .field(field)
+                .type(field.getType())
                 .build();
 
         return propertyConfig;

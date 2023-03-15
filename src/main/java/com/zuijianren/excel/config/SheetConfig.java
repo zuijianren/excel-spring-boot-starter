@@ -31,7 +31,7 @@ public class SheetConfig {
      * 是否展示序号列
      */
     @Builder.Default
-    private boolean showSerialNumber = true;
+    private boolean showSerialNumber = false;
 
     // todo 样式属性管理
 

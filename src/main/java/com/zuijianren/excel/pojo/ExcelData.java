@@ -15,10 +15,10 @@ import java.util.Collection;
 public class ExcelData {
 
     private SheetConfig sheetConfig;
-    private Collection data;
+    private Collection dataList;
 
-    public ExcelData(SheetConfig sheetConfig, Collection<?> data) {
+    public ExcelData(SheetConfig sheetConfig, Collection<?> dataList) {
         this.sheetConfig = sheetConfig;
-        this.data = data;
+        this.dataList = dataList;
     }
 }

@@ -32,4 +32,8 @@ public @interface ExcelMultiProperty {
 
     // 内嵌
     boolean nested() default false;
+
+
+    // 是否展示当前的名字
+    boolean showCurrentName() default false;
 }

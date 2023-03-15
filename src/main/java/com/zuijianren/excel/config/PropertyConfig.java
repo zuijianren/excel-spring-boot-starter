@@ -4,6 +4,7 @@ import com.zuijianren.excel.converter.ExcelConverter;
 import lombok.Builder;
 import lombok.Data;
 
+import java.lang.reflect.Field;
 import java.util.Comparator;
 import java.util.List;
 
@@ -59,6 +60,18 @@ public class PropertyConfig implements Comparable<PropertyConfig> {
      * 转换器
      */
     private Class<? extends ExcelConverter<?>> converter;
+
+    /**
+     * 反射的字段对象
+     */
+    private Field field;
+
+    /**
+     * 字段类型
+     * <p>
+     * 当字段为集合时 type为对应的泛型 而非 集合类
+     */
+    private Class<?> type;
 
 
     @Override

@@ -27,4 +27,10 @@ public @interface ExcelProperty {
 
     // 转换器 用于处理类型转换
     Class<? extends ExcelConverter<?>> converter() default DefaultExcelConverter.class;
+
+    // 是否展示当前的名字
+    boolean showCurrentName() default false;
+
+    // 内嵌
+    boolean nested() default false;
 }

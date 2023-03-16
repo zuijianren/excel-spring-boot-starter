@@ -165,13 +165,27 @@ public class ExcelOperator {
      * @param rowPosition 行
      * @param colPosition 列
      * @param num         合并数量
+     * @param cellStyle   单元格样式
      */
-    public static void mergeColCell(XSSFSheet sheet, int rowPosition, int colPosition, int num) {
+    public static void mergeColCell(XSSFSheet sheet, int rowPosition, int colPosition, int num, CellStyle cellStyle) {
         // 小于2 则 无需合并
         if (num < 2) {
             return;
         }
-        sheet.addMergedRegion(new CellRangeAddress(rowPosition, rowPosition, colPosition, colPosition + num - 1));
+        CellRangeAddress region = new CellRangeAddress(rowPosition, rowPosition, colPosition, colPosition + num - 1);
+        sheet.addMergedRegion(region);
+        // 合并后 追加样式
+        for (int i = region.getFirstColumn(); i <= region.getLastColumn(); i++) {
+            XSSFRow row = sheet.getRow(rowPosition);
+            if(row==null){
+                row = sheet.createRow(rowPosition);
+            }
+            XSSFCell cell = row.getCell(i);
+            if(cell==null){
+                cell = row.createCell(i);
+            }
+            cell.setCellStyle(cellStyle);
+        }
     }
 
     /**
@@ -181,13 +195,28 @@ public class ExcelOperator {
      * @param rowPosition 行
      * @param colPosition 列
      * @param num         合并数量
+     * @param cellStyle   单元格样式
      */
-    public static void mergeRowCell(XSSFSheet sheet, int rowPosition, int colPosition, int num) {
+    public static void mergeRowCell(XSSFSheet sheet, int rowPosition, int colPosition, int num, CellStyle cellStyle) {
         // 小于2 则 无需合并
         if (num < 2) {
             return;
         }
-        sheet.addMergedRegion(new CellRangeAddress(rowPosition, rowPosition + num - 1, colPosition, colPosition));
+        CellRangeAddress region = new CellRangeAddress(rowPosition, rowPosition + num - 1, colPosition, colPosition);
+        sheet.addMergedRegion(region);
+        // 合并后 追加样式
+        for (int i = region.getFirstRow(); i <= region.getLastRow(); i++) {
+            XSSFRow row = sheet.getRow(i);
+            if(row==null){
+                row = sheet.createRow(i);
+            }
+            XSSFCell cell = row.getCell(colPosition);
+            if(cell==null){
+                cell = row.createCell(colPosition);
+            }
+            cell.setCellStyle(cellStyle);
+        }
     }
+
 
 }

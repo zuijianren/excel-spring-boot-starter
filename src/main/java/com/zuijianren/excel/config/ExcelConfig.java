@@ -20,12 +20,16 @@ public class ExcelConfig {
     private XSSFWorkbook xssfWorkbook = new XSSFWorkbook();
 
 
-    // todo 设置默认样式  便于工具使用者进行使用
-
     /**
      * sheet 名字 配置
      */
     private AbstractCellStyleConfig sheetNameStyleConfig;
+
+    /**
+     * 序号列样式
+     */
+    private AbstractCellStyleConfig serialNumberStyleConfig;
+
     /**
      * 标题单元格样式
      */
@@ -35,5 +39,6 @@ public class ExcelConfig {
      * 内容单元格样式
      */
     private AbstractCellStyleConfig contentCellStyleConfig;
+
 
 }

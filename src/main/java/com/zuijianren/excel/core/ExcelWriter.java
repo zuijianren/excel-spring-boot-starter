@@ -7,19 +7,14 @@ import com.zuijianren.excel.config.style.AbstractCellStyleConfig;
 import com.zuijianren.excel.pojo.ExcelData;
 import lombok.Data;
 import org.apache.poi.ss.usermodel.CellStyle;
-import org.apache.poi.xssf.usermodel.XSSFCell;
-import org.apache.poi.xssf.usermodel.XSSFRow;
-import org.apache.poi.xssf.usermodel.XSSFSheet;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.apache.poi.xssf.usermodel.*;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
 import static com.zuijianren.excel.core.ExcelOperator.*;
 
@@ -139,8 +134,9 @@ public class ExcelWriter {
                 }
                 assert sheetNameStyleConfig != null;
                 CellStyle cellStyle = sheetNameStyleConfig.createCellStyle(xssfWorkbook);
-                mergeColCell(sheet, rowPosition, 0, sheetConfig.getColNum());
-                writeCell(sheet, rowPosition++, 0, sheetConfig.getSheetName(), String.class, cellStyle); // 写入完成后 行数加1
+                writeCell(sheet, rowPosition, 0, sheetConfig.getSheetName(), String.class, cellStyle); // 写入完成后 行数加1
+                mergeColCell(sheet, rowPosition, 0, sheetConfig.getColNum(), cellStyle);
+                rowPosition++;
             }
 
             // 表头创建
@@ -172,25 +168,39 @@ public class ExcelWriter {
             for (int j = 0; j < colRange; j++) {
                 XSSFCell cell = selectRow.getCell(j);
                 if (cell == null) {
-                    // 合并之前的重复单元格
-                    mergeColCell(sheet, currentRowPosition, j - repeatNum, repeatNum);
+                    // 如果重复值大于1 则进行合并单元格操作
+                    if (repeatNum > 1) {
+                        // 获取之前单元格的样式
+                        XSSFCell previousCell = selectRow.getCell(j - 1);
+                        XSSFCellStyle cellStyle = previousCell.getCellStyle();
+                        // 合并之前的重复单元格
+                        mergeColCell(sheet, currentRowPosition, j - repeatNum, repeatNum, cellStyle);
+                    }
                     flagValue = "";
                     repeatNum = 0;
                     continue; //跳过
                 }
                 String currentValue = cell.getStringCellValue(); // 默认标题头都是字符串类型
                 assert currentValue != null;
-                if (flagValue.equals(currentValue)) {
+                if (flagValue.equals(currentValue) && !flagValue.equals("")) {
                     repeatNum++;
                 } else {
-                    // 合并之前的重复单元格
-                    mergeColCell(sheet, currentRowPosition, j - repeatNum, repeatNum);
+                    if (repeatNum > 1) {
+                        // 获取之前单元格的样式
+                        XSSFCell previousCell = selectRow.getCell(j - 1);
+                        XSSFCellStyle cellStyle = previousCell.getCellStyle();
+                        // 合并之前的重复单元格
+                        mergeColCell(sheet, currentRowPosition, j - repeatNum, repeatNum, cellStyle);
+                    }
                     // 更新值
                     flagValue = currentValue;
                     repeatNum = 1;
                 }
             }
-            mergeColCell(sheet, currentRowPosition, colRange - repeatNum, repeatNum); // 退出循环前再合并一次
+            // 获取之前单元格的样式
+            XSSFCell previousCell = selectRow.getCell(colRange - 1);
+            XSSFCellStyle cellStyle = previousCell.getCellStyle();
+            mergeColCell(sheet, currentRowPosition, colRange - repeatNum, repeatNum, cellStyle); // 退出循环前再合并一次
         }
     }
 
@@ -229,7 +239,7 @@ public class ExcelWriter {
      */
     private int writeData(XSSFSheet sheet, int rowPosition, int colPosition, Object data, List<PropertyConfig> propertyConfigList) {
         int rowNumCount = 0; // 统计当前数据所占行数
-        List<Integer> singleColumnList = new ArrayList<>(); // 存储非multi的列
+        Map<Integer, CellStyle> singleColumnMap = new HashMap<>();  // 存储非multi的列和样式
         for (PropertyConfig propertyConfig : propertyConfigList) {
 
             AbstractCellStyleConfig contentCellStyleConfig = propertyConfig.getContentCellStyleConfig();
@@ -257,12 +267,12 @@ public class ExcelWriter {
                     writeData(sheet, rowPosition, colPosition, value, propertyConfig.getChildPropertyConfigList());
                     colPosition += propertyConfig.getColNum();
                     for (int i = colPosition - propertyConfig.getColNum(); i < colPosition; i++) {
-                        singleColumnList.add(i);
+                        singleColumnMap.put(i, cellStyle);
                     }
                 } else {
                     // 普通属性  直接写入 并且 colPosition 加1
                     writeCell(sheet, rowPosition, colPosition++, value, propertyConfig.getType(), cellStyle);
-                    singleColumnList.add(colPosition - 1);
+                    singleColumnMap.put(colPosition - 1, cellStyle);
                 }
                 rowNumCount = Math.max(rowNumCount, 1); // 仅占一行
             } else {
@@ -293,8 +303,8 @@ public class ExcelWriter {
                 }
             }
         }
-        for (Integer mergeColPosition : singleColumnList) {
-            mergeRowCell(sheet, rowPosition, mergeColPosition, rowNumCount);
+        for (Integer mergeColPosition : singleColumnMap.keySet()) {
+            mergeRowCell(sheet, rowPosition, mergeColPosition, rowNumCount, singleColumnMap.get(mergeColPosition));
         }
         return rowNumCount;
     }
@@ -309,9 +319,13 @@ public class ExcelWriter {
     private void writeHead(XSSFSheet sheet, int rowPosition, SheetConfig sheetConfig) {
         int size = sheetConfig.getRowNum();
         int colPosition = 0;
+
+        AbstractCellStyleConfig serialNumberStyleConfig = excelConfig.getSerialNumberStyleConfig();
+        CellStyle cellStyle = serialNumberStyleConfig.createCellStyle(excelConfig.getXssfWorkbook());
+
         // 处理序号列
         if (sheetConfig.isShowSerialNumber()) {
-            mergeRowCell(sheet, rowPosition, colPosition, size);
+            mergeRowCell(sheet, rowPosition, colPosition, size, cellStyle);
             writeCell(sheet, rowPosition, colPosition++, "序号");
         }
         // 表头写入
@@ -347,7 +361,7 @@ public class ExcelWriter {
                 for (int i = 0; i < value.length; i++) {
                     //  最后一行  合并当前剩余行
                     if (i == value.length - 1) {
-                        mergeRowCell(sheet, currentRowPosition, colPosition, rem);
+                        mergeRowCell(sheet, currentRowPosition, colPosition, rem, cellStyle);
                     }
                     writeCell(sheet, currentRowPosition++, colPosition, value[i], String.class, cellStyle);
                     rem--; // 余量减1
@@ -358,8 +372,9 @@ public class ExcelWriter {
                 if (propertyConfig.isShowCurrentName()) {
                     String[] value = propertyConfig.getValue();
                     for (int i = 0; i < value.length; i++) {
-                        mergeColCell(sheet, currentRowPosition, colPosition, propertyConfig.getColNum()); // 横向合并
-                        writeCell(sheet, currentRowPosition++, colPosition, value[i], String.class, cellStyle); // 写入表头
+                        writeCell(sheet, currentRowPosition, colPosition, value[i], String.class, cellStyle); // 写入表头
+                        mergeColCell(sheet, currentRowPosition, colPosition, propertyConfig.getColNum(), cellStyle); // 横向合并
+                        currentRowPosition++;
                         rem--; // 余量减1
                     }
                 }

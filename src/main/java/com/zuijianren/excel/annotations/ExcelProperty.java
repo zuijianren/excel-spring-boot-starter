@@ -28,9 +28,21 @@ public @interface ExcelProperty {
     // 转换器 用于处理类型转换
     Class<? extends ExcelConverter<?>> converter() default DefaultExcelConverter.class;
 
+    // 内嵌
+    boolean nested() default false;
+
     // 是否展示当前的名字
     boolean showCurrentName() default false;
 
-    // 内嵌
-    boolean nested() default false;
+    // 标题字体颜色
+    String headFontColor();
+
+    // 标题背景颜色
+    String headBgColor();
+
+    // 内容字体颜色
+    String contentFontColor();
+
+    // 内容背景颜色
+    String contentBgColor();
 }

@@ -3,9 +3,15 @@ package com.zuijianren.excel.core;
 import com.zuijianren.excel.annotations.ExcelMultiProperty;
 import com.zuijianren.excel.annotations.ExcelProperty;
 import com.zuijianren.excel.annotations.ExcelSheet;
+import com.zuijianren.excel.annotations.style.ExcelContentCellStyle;
+import com.zuijianren.excel.annotations.style.ExcelHeadCellStyle;
+import com.zuijianren.excel.annotations.style.ExcelSheetNameStyle;
 import com.zuijianren.excel.config.PropertyConfig;
 import com.zuijianren.excel.config.SheetConfig;
+import com.zuijianren.excel.config.style.AbstractCellStyleConfig;
+import com.zuijianren.excel.config.style.HeadCellStyleConfig;
 import com.zuijianren.excel.exceptions.ParserException;
+import lombok.extern.slf4j.Slf4j;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
@@ -18,6 +24,7 @@ import java.util.*;
  * @author zuijianren
  * @date 2023/3/13 12:57
  */
+@Slf4j
 public class ExcelParser {
 
     private final Map<Class<?>, SheetConfig> sheetConfigCache = new HashMap<>();
@@ -45,12 +52,6 @@ public class ExcelParser {
         if (sheetConfig != null) {
             return sheetConfig;
         }
-        // 如果不存在  则进行解析
-        // 校验当前类是否添加 ExcelSheet 注解
-        if (!clazz.isAnnotationPresent(ExcelSheet.class)) {
-            // 如果未添加  抛出异常
-            throw new ParserException("所选择的对象: [" + clazz + "] 不支持导出. 如需要导出, 请添加 ExcelSheet 等相关注解.");
-        }
         return parseSheetConfig(clazz);
     }
 
@@ -61,9 +62,22 @@ public class ExcelParser {
      * @return sheet 表配置
      */
     private SheetConfig parseSheetConfig(Class<?> clazz) {
-        ArrayList<PropertyConfig> propertyConfigList = new ArrayList<>(); // 解析 property
 
-        // 获取 注解 进行解析
+        // 校验当前类是否添加 ExcelSheet 注解
+        if (!clazz.isAnnotationPresent(ExcelSheet.class)) {
+            // 如果未添加  抛出异常
+            throw new ParserException("所选择的对象: [" + clazz + "] 不支持导出. 如需要导出, 请添加 ExcelSheet 等相关注解.");
+        }
+
+        // 打印 解析 信息   用于测试当前导出工具实际运行情况
+        log.debug("解析类: " + clazz);
+
+        // 样式解析
+        AbstractCellStyleConfig sheetNameStyle = Optional.ofNullable(clazz.getAnnotation(ExcelSheetNameStyle.class)).map(this::parseExcelSheetNameStyle).orElse(null);
+        AbstractCellStyleConfig headStyle = Optional.ofNullable(clazz.getAnnotation(ExcelHeadCellStyle.class)).map(this::parseExcelHeadCellStyle).orElse(null);
+        AbstractCellStyleConfig contentStyle = Optional.ofNullable(clazz.getAnnotation(ExcelContentCellStyle.class)).map(this::parseExcelContentCellStyle).orElse(null);
+
+        // 获取 ExcelSheet 注解 进行解析
         ExcelSheet sheetAnnotation = clazz.getAnnotation(ExcelSheet.class);
         String sheetName = sheetAnnotation.value(); // 获取 sheet 名
         Field[] fields = clazz.getDeclaredFields();
@@ -71,6 +85,7 @@ public class ExcelParser {
         int multiNum = 0; // multi 属性统计
         Field multiFieldCache = null; // multi 属性缓存  用于提示错误
 
+        ArrayList<PropertyConfig> propertyConfigList = new ArrayList<>(); // 解析 property
         for (Field field : fields) {
             field.setAccessible(true);
             PropertyConfig propertyConfig = null;
@@ -82,7 +97,6 @@ public class ExcelParser {
                 // 忽略未添加 ExcelProperty 或者 ExcelMultiProperty 注解的属性
                 continue;
             }
-            propertyConfigList.add(propertyConfig);
             /*
              * 一个 Sheet 对象仅允许有一个 multi 属性(multi属性中可以继续持有multi属性, 不进行限制 即 一定程度上可以多次一对多)
              * 否则 会展示异常 因此 此处直接报错
@@ -94,6 +108,16 @@ public class ExcelParser {
                 }
                 multiFieldCache = field;
             }
+            // 处理样式
+            if (propertyConfig.getHeadCellStyleConfig() == null) {
+                propertyConfig.setHeadCellStyleConfig(headStyle);
+            }
+            if (propertyConfig.getContentCellStyleConfig() == null) {
+                propertyConfig.setContentCellStyleConfig(contentStyle);
+            }
+
+
+            propertyConfigList.add(propertyConfig);
         }
 
         // 根据 order 进行排序
@@ -103,6 +127,11 @@ public class ExcelParser {
         SheetConfig sheetConfig = SheetConfig.builder()
                 .sheetName(sheetName)
                 .propertyConfigList(propertyConfigList)
+                // 样式配置
+                .sheetNameStyleConfig(sheetNameStyle)
+                .headCellStyleConfig(headStyle)
+                .contentCellStyleConfig(contentStyle)
+                // 集合属性
                 .hasMulti(multiNum != 0)
                 .build();
 
@@ -122,6 +151,10 @@ public class ExcelParser {
         if (!Collection.class.isAssignableFrom(field.getType())) {
             throw new ParserException(field.getName() + "属性不是集合类, 无法使用ExcelMultiProperty注解.");
         }
+
+        // 样式解析
+        AbstractCellStyleConfig headStyle = Optional.ofNullable(field.getAnnotation(ExcelHeadCellStyle.class)).map(this::parseExcelHeadCellStyle).orElse(null);
+        AbstractCellStyleConfig contentStyle = Optional.ofNullable(field.getAnnotation(ExcelContentCellStyle.class)).map(this::parseExcelContentCellStyle).orElse(null);
 
         // 获取 注解 进行解析
         ExcelMultiProperty multiPropertyAnnotation = field.getAnnotation(ExcelMultiProperty.class);
@@ -147,6 +180,9 @@ public class ExcelParser {
                 .value(multiPropertyAnnotation.value())
                 .field(field)
                 .type(genericClass)
+                // 样式属性
+                .headCellStyleConfig(headStyle)
+                .contentCellStyleConfig(contentStyle)
                 // 转换器
                 .converter(multiPropertyAnnotation.converter())
                 // 内嵌属性相关
@@ -170,6 +206,10 @@ public class ExcelParser {
         Class<?> type = field.getType(); // 获取属性类型
         boolean hasMulti = false; // 当前 field 是否含有 multi 属性
 
+        // 样式解析
+        AbstractCellStyleConfig headStyle = Optional.ofNullable(field.getAnnotation(ExcelHeadCellStyle.class)).map(this::parseExcelHeadCellStyle).orElse(null);
+        AbstractCellStyleConfig contentStyle = Optional.ofNullable(field.getAnnotation(ExcelContentCellStyle.class)).map(this::parseExcelContentCellStyle).orElse(null);
+
         // nested 属性解析
         List<PropertyConfig> childPropertyConfigList = null; // 子属性集合 (如果为内嵌属性, 则赋值)
         if (propertyAnnotation.nested()) {
@@ -189,6 +229,9 @@ public class ExcelParser {
                 .value(propertyAnnotation.value())
                 .field(field)
                 .type(type)
+                // 样式属性
+                .headCellStyleConfig(headStyle)
+                .contentCellStyleConfig(contentStyle)
                 // 转换器
                 .converter(propertyAnnotation.converter())
                 // 内嵌属性相关
@@ -199,4 +242,39 @@ public class ExcelParser {
                 .multi(hasMulti)
                 .build();
     }
+
+    /**
+     * 解析 ExcelContentCellStyle 注解 获取配置
+     *
+     * @param cellStyle 样式注解对象
+     * @return 样式配置
+     */
+    private AbstractCellStyleConfig parseExcelContentCellStyle(ExcelContentCellStyle cellStyle) {
+        return HeadCellStyleConfig.builder()
+                // todo 解析
+                .build();
+    }
+
+    /**
+     * 解析 ExcelHeadCellStyle 注解 获取配置
+     *
+     * @param cellStyle 样式注解对象
+     * @return 样式配置
+     */
+    private AbstractCellStyleConfig parseExcelHeadCellStyle(ExcelHeadCellStyle cellStyle) {
+        return HeadCellStyleConfig.builder()
+                // todo 解析
+                .build();
+    }
+
+    /**
+     * 解析 ExcelSheetNameStyle 注解 获取配置
+     *
+     * @param cellStyle 样式注解对象
+     * @return 样式配置
+     */
+    private AbstractCellStyleConfig parseExcelSheetNameStyle(ExcelSheetNameStyle cellStyle) {
+        return null;
+    }
+
 }

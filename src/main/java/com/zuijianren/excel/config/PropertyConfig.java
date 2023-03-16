@@ -1,5 +1,6 @@
 package com.zuijianren.excel.config;
 
+import com.zuijianren.excel.config.style.AbstractCellStyleConfig;
 import com.zuijianren.excel.converter.ExcelConverter;
 import lombok.Builder;
 import lombok.Data;
@@ -78,6 +79,20 @@ public class PropertyConfig implements Comparable<PropertyConfig> {
      * 当字段为集合时 type为对应的泛型 而非 集合类
      */
     private Class<?> type;
+
+    /**
+     * 标题单元格样式
+     * <p>
+     * 如果当前为空 则采用上一级的配置进行写入
+     */
+    private AbstractCellStyleConfig headCellStyleConfig;
+
+    /**
+     * 内容单元格样式
+     * <p>
+     * 如果当前为空 则采用上一级的配置进行写入
+     */
+    private AbstractCellStyleConfig contentCellStyleConfig;
 
 
     @Override

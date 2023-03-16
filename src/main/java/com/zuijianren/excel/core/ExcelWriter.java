@@ -3,8 +3,10 @@ package com.zuijianren.excel.core;
 import com.zuijianren.excel.config.ExcelConfig;
 import com.zuijianren.excel.config.PropertyConfig;
 import com.zuijianren.excel.config.SheetConfig;
+import com.zuijianren.excel.config.style.AbstractCellStyleConfig;
 import com.zuijianren.excel.pojo.ExcelData;
 import lombok.Data;
+import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.xssf.usermodel.XSSFCell;
 import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
@@ -129,8 +131,16 @@ public class ExcelWriter {
 
             // 首行创建
             if (sheetConfig.isShowSheetName()) {
+                // 获取 样式
+                AbstractCellStyleConfig sheetNameStyleConfig = sheetConfig.getSheetNameStyleConfig();
+                // 如果没有配置样式 则获取 excelConfig 中的样式(必定包含默认样式)
+                if (sheetNameStyleConfig == null) {
+                    sheetNameStyleConfig = excelConfig.getSheetNameStyleConfig();
+                }
+                assert sheetNameStyleConfig != null;
+                CellStyle cellStyle = sheetNameStyleConfig.createCellStyle(xssfWorkbook);
                 mergeColCell(sheet, rowPosition, 0, sheetConfig.getColNum());
-                writeCell(sheet, rowPosition++, 0, sheetConfig.getSheetName()); // 写入完成后 行数加1
+                writeCell(sheet, rowPosition++, 0, sheetConfig.getSheetName(), String.class, cellStyle); // 写入完成后 行数加1
             }
 
             // 表头创建
@@ -202,7 +212,8 @@ public class ExcelWriter {
 
             List<PropertyConfig> propertyConfigList = sheetConfig.getPropertyConfigList();
 
-            int i = writeData(sheet, rowPosition, colPosition, data, propertyConfigList);
+            int rowNum = writeData(sheet, rowPosition, colPosition, data, propertyConfigList);
+            rowPosition += rowNum;
         }
     }
 
@@ -220,6 +231,14 @@ public class ExcelWriter {
         int rowNumCount = 0; // 统计当前数据所占行数
         List<Integer> singleColumnList = new ArrayList<>(); // 存储非multi的列
         for (PropertyConfig propertyConfig : propertyConfigList) {
+
+            AbstractCellStyleConfig contentCellStyleConfig = propertyConfig.getContentCellStyleConfig();
+            if (contentCellStyleConfig == null) {
+                contentCellStyleConfig = excelConfig.getContentCellStyleConfig();
+            }
+            assert contentCellStyleConfig != null;
+            CellStyle cellStyle = contentCellStyleConfig.createCellStyle(excelConfig.getXssfWorkbook());
+
             // 获取 对应数据
             Field field = propertyConfig.getField();
             Object value = null;
@@ -242,7 +261,7 @@ public class ExcelWriter {
                     }
                 } else {
                     // 普通属性  直接写入 并且 colPosition 加1
-                    writeCell(sheet, rowPosition, colPosition++, value, propertyConfig.getType());
+                    writeCell(sheet, rowPosition, colPosition++, value, propertyConfig.getType(), cellStyle);
                     singleColumnList.add(colPosition - 1);
                 }
                 rowNumCount = Math.max(rowNumCount, 1); // 仅占一行
@@ -253,7 +272,7 @@ public class ExcelWriter {
                 if (!propertyConfig.isNested()) {
                     for (Object currentValue : collection) {
                         // 写入多行数据
-                        writeCell(sheet, currentRowPosition++, colPosition, currentValue, propertyConfig.getType());
+                        writeCell(sheet, currentRowPosition++, colPosition, currentValue, propertyConfig.getType(), cellStyle);
                     }
                     colPosition++;
                     rowNumCount = Math.max(rowNumCount, collection.size()); // 占多行
@@ -312,6 +331,14 @@ public class ExcelWriter {
      */
     private void writeHead(XSSFSheet sheet, List<PropertyConfig> propertyConfigList, int rowPosition, int colPosition, int size) {
         for (PropertyConfig propertyConfig : propertyConfigList) {
+            // 获取 当前属性 标题 的 样式
+            AbstractCellStyleConfig cellStyleConfig = propertyConfig.getHeadCellStyleConfig();
+            if (cellStyleConfig == null) {
+                cellStyleConfig = excelConfig.getHeadCellStyleConfig();
+            }
+            assert cellStyleConfig != null;
+            CellStyle cellStyle = cellStyleConfig.createCellStyle(excelConfig.getXssfWorkbook());
+
             int currentRowPosition = rowPosition; // 当前行数 每个属性单独计算
             if (!propertyConfig.isNested()) { // 处理非内嵌属性
                 String[] value = propertyConfig.getValue();
@@ -322,7 +349,7 @@ public class ExcelWriter {
                     if (i == value.length - 1) {
                         mergeRowCell(sheet, currentRowPosition, colPosition, rem);
                     }
-                    writeCell(sheet, currentRowPosition++, colPosition, value[i]);
+                    writeCell(sheet, currentRowPosition++, colPosition, value[i], String.class, cellStyle);
                     rem--; // 余量减1
                 }
             } else {    // 处理内嵌属性
@@ -332,7 +359,7 @@ public class ExcelWriter {
                     String[] value = propertyConfig.getValue();
                     for (int i = 0; i < value.length; i++) {
                         mergeColCell(sheet, currentRowPosition, colPosition, propertyConfig.getColNum()); // 横向合并
-                        writeCell(sheet, currentRowPosition++, colPosition, value[i]); // 写入表头
+                        writeCell(sheet, currentRowPosition++, colPosition, value[i], String.class, cellStyle); // 写入表头
                         rem--; // 余量减1
                     }
                 }

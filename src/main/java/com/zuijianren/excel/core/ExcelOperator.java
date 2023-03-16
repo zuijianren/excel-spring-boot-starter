@@ -1,6 +1,7 @@
 package com.zuijianren.excel.core;
 
 import com.zuijianren.excel.exceptions.WriteToCellException;
+import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.RichTextString;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.XSSFCell;
@@ -26,76 +27,121 @@ public class ExcelOperator {
      * @param colPosition 列
      * @param value       值
      */
-    public static void writeCell(XSSFSheet sheet, int rowPosition, int colPosition, boolean value) {
+    public static XSSFCell writeCell(XSSFSheet sheet, int rowPosition, int colPosition, boolean value) {
         XSSFRow row = sheet.getRow(rowPosition);
         if (row == null) {
             row = sheet.createRow(rowPosition);
         }
         XSSFCell cell = row.createCell(colPosition);
         cell.setCellValue(value);
+        return cell;
     }
 
-    public static void writeCell(XSSFSheet sheet, int rowPosition, int colPosition, double value) {
+    public static XSSFCell writeCell(XSSFSheet sheet, int rowPosition, int colPosition, double value) {
         XSSFRow row = sheet.getRow(rowPosition);
         if (row == null) {
             row = sheet.createRow(rowPosition);
         }
         XSSFCell cell = row.createCell(colPosition);
         cell.setCellValue(value);
+        return cell;
     }
 
-    public static void writeCell(XSSFSheet sheet, int rowPosition, int colPosition, Date value) {
+    public static XSSFCell writeCell(XSSFSheet sheet, int rowPosition, int colPosition, Date value) {
         XSSFRow row = sheet.getRow(rowPosition);
         if (row == null) {
             row = sheet.createRow(rowPosition);
         }
         XSSFCell cell = row.createCell(colPosition);
         cell.setCellValue(value);
+        return cell;
     }
 
-    public static void writeCell(XSSFSheet sheet, int rowPosition, int colPosition, LocalDateTime value) {
+    public static XSSFCell writeCell(XSSFSheet sheet, int rowPosition, int colPosition, LocalDateTime value) {
         XSSFRow row = sheet.getRow(rowPosition);
         if (row == null) {
             row = sheet.createRow(rowPosition);
         }
         XSSFCell cell = row.createCell(colPosition);
         cell.setCellValue(value);
+        return cell;
     }
 
-    public static void writeCell(XSSFSheet sheet, int rowPosition, int colPosition, LocalDate value) {
+    public static XSSFCell writeCell(XSSFSheet sheet, int rowPosition, int colPosition, LocalDate value) {
         XSSFRow row = sheet.getRow(rowPosition);
         if (row == null) {
             row = sheet.createRow(rowPosition);
         }
         XSSFCell cell = row.createCell(colPosition);
         cell.setCellValue(value);
+        return cell;
     }
 
-    public static void writeCell(XSSFSheet sheet, int rowPosition, int colPosition, Calendar value) {
+    public static XSSFCell writeCell(XSSFSheet sheet, int rowPosition, int colPosition, Calendar value) {
         XSSFRow row = sheet.getRow(rowPosition);
         if (row == null) {
             row = sheet.createRow(rowPosition);
         }
         XSSFCell cell = row.createCell(colPosition);
         cell.setCellValue(value);
+        return cell;
     }
 
-    public static void writeCell(XSSFSheet sheet, int rowPosition, int colPosition, String value) {
+    public static XSSFCell writeCell(XSSFSheet sheet, int rowPosition, int colPosition, String value) {
         XSSFRow row = sheet.getRow(rowPosition);
         if (row == null) {
             row = sheet.createRow(rowPosition);
         }
         XSSFCell cell = row.createCell(colPosition);
         cell.setCellValue(value);
+        return cell;
     }
 
-    public static void writeCell(XSSFSheet sheet, int rowPosition, int colPosition, RichTextString value) {
+    public static XSSFCell writeCell(XSSFSheet sheet, int rowPosition, int colPosition, RichTextString value) {
         XSSFRow row = sheet.getRow(rowPosition);
         if (row == null) {
             row = sheet.createRow(rowPosition);
         }
         XSSFCell cell = row.createCell(colPosition);
         cell.setCellValue(value);
+        return cell;
+    }
+
+
+    /**
+     * 写入 Object 对象的方法
+     *
+     * @param sheet       sheet 对象
+     * @param rowPosition 行
+     * @param colPosition 列
+     * @param value       值
+     * @param type        对应类型
+     */
+    public static void writeCell(XSSFSheet sheet, int rowPosition, int colPosition, Object value, Class<?> type, CellStyle cellStyle) {
+        XSSFCell cell = null;
+        // 根据 type 进行解析
+        if (Integer.class.isAssignableFrom(type)) {
+            cell = writeCell(sheet, rowPosition, colPosition, (Integer) value);
+        } else if (Double.class.isAssignableFrom(type)) {
+            cell = writeCell(sheet, rowPosition, colPosition, (Double) value);
+        } else if (Date.class.isAssignableFrom(type)) {
+            cell = writeCell(sheet, rowPosition, colPosition, (Date) value);
+        } else if (LocalDateTime.class.isAssignableFrom(type)) {
+            cell = writeCell(sheet, rowPosition, colPosition, (LocalDateTime) value);
+        } else if (LocalDate.class.isAssignableFrom(type)) {
+            cell = writeCell(sheet, rowPosition, colPosition, (LocalDate) value);
+        } else if (Calendar.class.isAssignableFrom(type)) {
+            cell = writeCell(sheet, rowPosition, colPosition, (Calendar) value);
+        } else if (String.class.isAssignableFrom(type)) {
+            cell = writeCell(sheet, rowPosition, colPosition, (String) value);
+        } else if (RichTextString.class.isAssignableFrom(type)) {
+            cell = writeCell(sheet, rowPosition, colPosition, (RichTextString) value);
+        } else {
+            throw new WriteToCellException(type.getName());
+        }
+        if (cellStyle != null) {
+            cell.setCellStyle(cellStyle);
+        }
     }
 
     /**
@@ -108,26 +154,7 @@ public class ExcelOperator {
      * @param type        对应类型
      */
     public static void writeCell(XSSFSheet sheet, int rowPosition, int colPosition, Object value, Class<?> type) {
-        // 根据 type 进行解析
-        if (Integer.class.isAssignableFrom(type)) {
-            writeCell(sheet, rowPosition, colPosition, (Integer) value);
-        } else if (Double.class.isAssignableFrom(type)) {
-            writeCell(sheet, rowPosition, colPosition, (Double) value);
-        } else if (Date.class.isAssignableFrom(type)) {
-            writeCell(sheet, rowPosition, colPosition, (Date) value);
-        } else if (LocalDateTime.class.isAssignableFrom(type)) {
-            writeCell(sheet, rowPosition, colPosition, (LocalDateTime) value);
-        } else if (LocalDate.class.isAssignableFrom(type)) {
-            writeCell(sheet, rowPosition, colPosition, (LocalDate) value);
-        } else if (Calendar.class.isAssignableFrom(type)) {
-            writeCell(sheet, rowPosition, colPosition, (Calendar) value);
-        } else if (String.class.isAssignableFrom(type)) {
-            writeCell(sheet, rowPosition, colPosition, (String) value);
-        } else if (RichTextString.class.isAssignableFrom(type)) {
-            writeCell(sheet, rowPosition, colPosition, (RichTextString) value);
-        } else {
-            throw new WriteToCellException(type.getName());
-        }
+        writeCell(sheet, rowPosition, colPosition, value, type, null);
     }
 
 

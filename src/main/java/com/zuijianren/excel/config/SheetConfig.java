@@ -1,5 +1,6 @@
 package com.zuijianren.excel.config;
 
+import com.zuijianren.excel.config.style.AbstractCellStyleConfig;
 import lombok.Builder;
 import lombok.Data;
 
@@ -33,8 +34,6 @@ public class SheetConfig {
     @Builder.Default
     private boolean showSerialNumber = false;
 
-    // todo 样式属性管理
-
     /**
      * 属性
      */
@@ -44,6 +43,25 @@ public class SheetConfig {
      * 对象中是否有字段含有 multi 属性
      */
     private boolean hasMulti;
+
+    /**
+     * sheet 名字 配置
+     */
+    private AbstractCellStyleConfig sheetNameStyleConfig;
+
+    /**
+     * 标题单元格样式
+     * <p>
+     * 如果当前为空 则写入数据时   采用上一级的配置进行写入
+     */
+    private AbstractCellStyleConfig headCellStyleConfig;
+
+    /**
+     * 内容单元格样式
+     * <p>
+     * 如果当前为空 则写入数据时   采用上一级的配置进行写入
+     */
+    private AbstractCellStyleConfig contentCellStyleConfig;
 
     /**
      * 根据当前配置 计算列数

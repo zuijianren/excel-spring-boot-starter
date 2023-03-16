@@ -1,10 +1,8 @@
 package com.zuijianren.excel;
 
 import com.zuijianren.excel.core.ExcelWriter;
-import org.apache.poi.xssf.usermodel.XSSFCell;
-import org.apache.poi.xssf.usermodel.XSSFRow;
-import org.apache.poi.xssf.usermodel.XSSFSheet;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.apache.poi.ss.usermodel.Font;
+import org.apache.poi.xssf.usermodel.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -42,11 +40,8 @@ public class ExcelExportUtilTest {
     @Test
     @DisplayName("写入类测试")
     public void writerTest() throws IOException {
-        // 写入
-        ExcelWriter excelWriter = ExcelWriter.createExcelWriter("a.xlsx", null);
-
-        excelWriter
-//                .write(Student.class, Collections.singletonList(student))
+        ExcelWriter.createExcelWriter("a.xlsx", null)
+                .write(Student.class, Collections.singletonList(student))
                 .write(Teacher.class, Collections.singletonList(teacher))
                 .doWrite();
     }
@@ -58,6 +53,12 @@ public class ExcelExportUtilTest {
         XSSFRow row = sheet.createRow(1);
         XSSFCell cell = row.createCell(2);
         cell.setCellValue("a");
+
+        XSSFCellStyle cellStyle = xssfWorkbook.createCellStyle();
+        Font titleFont = xssfWorkbook.createFont();
+        titleFont.setBold(true); // 设置为粗体
+//        titleFont.setColor(0xc0c0c0);
+        cellStyle.setFont(titleFont);
 
         XSSFCell cell2 = row.createCell(3);
         cell2.setCellValue("a");

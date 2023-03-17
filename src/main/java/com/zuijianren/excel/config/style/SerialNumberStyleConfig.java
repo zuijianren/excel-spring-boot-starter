@@ -12,13 +12,12 @@ import org.apache.poi.ss.usermodel.IndexedColors;
  */
 @Data
 @Builder
-public class HeadCellStyleConfig extends AbstractCellStyleConfig {
+public class SerialNumberStyleConfig extends AbstractCellStyleConfig {
 
-    public HeadCellStyleConfig() {
+
+    public SerialNumberStyleConfig() {
         /*=== 设置默认值 ===*/
         // 灰色背景
         setBgColor(IndexedColors.GREY_40_PERCENT.index);
-        // 字体加粗
-        setBold(true);
     }
 }

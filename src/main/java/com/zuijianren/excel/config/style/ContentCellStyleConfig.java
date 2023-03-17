@@ -15,5 +15,8 @@ import lombok.Data;
 @Builder
 public class ContentCellStyleConfig extends AbstractCellStyleConfig {
 
+    public ContentCellStyleConfig() {
+        /*=== 设置默认值 ===*/
 
+    }
 }

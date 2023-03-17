@@ -13,6 +13,7 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
  */
 @Data
 public abstract class AbstractCellStyleConfig {
+    // 默认值 为  默认单元格样式
 
     // 字体颜色
     private short fontColor = IndexedColors.BLACK.index;

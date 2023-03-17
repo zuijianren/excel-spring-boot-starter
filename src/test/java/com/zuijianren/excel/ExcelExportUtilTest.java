@@ -1,12 +1,7 @@
 package com.zuijianren.excel;
 
 import com.zuijianren.excel.config.ExcelConfig;
-import com.zuijianren.excel.config.style.AbstractCellStyleConfig;
-import com.zuijianren.excel.config.style.ContentCellStyleConfig;
-import com.zuijianren.excel.config.style.HeadCellStyleConfig;
-import com.zuijianren.excel.config.style.SheetNameStyleConfig;
 import com.zuijianren.excel.core.ExcelWriter;
-import org.apache.poi.ss.usermodel.BorderStyle;
 import org.apache.poi.ss.usermodel.FillPatternType;
 import org.apache.poi.ss.usermodel.Font;
 import org.apache.poi.ss.usermodel.IndexedColors;
@@ -46,23 +41,23 @@ public class ExcelExportUtilTest {
     @Test
     @DisplayName("写入类测试")
     public void writerTest() throws IOException {
-        AbstractCellStyleConfig sheetNameStyleConfig = SheetNameStyleConfig.builder().build();
-        sheetNameStyleConfig.setBgColor(IndexedColors.GREY_25_PERCENT.index);
-        sheetNameStyleConfig.setBold(true);
-        sheetNameStyleConfig.setBorderStyle(BorderStyle.MEDIUM);
-        AbstractCellStyleConfig headCellStyleConfig = HeadCellStyleConfig.builder().build();
-        headCellStyleConfig.setBgColor(IndexedColors.GREY_25_PERCENT.index);
-        headCellStyleConfig.setBold(true);
-        headCellStyleConfig.setBorderStyle(BorderStyle.MEDIUM);
-        AbstractCellStyleConfig contentCellStyleConfig = ContentCellStyleConfig.builder().build();
-        contentCellStyleConfig.setBgColor(IndexedColors.WHITE.index);
-        AbstractCellStyleConfig numberStyleConfig = ContentCellStyleConfig.builder().build();
+//        AbstractCellStyleConfig sheetNameStyleConfig = SheetNameStyleConfig.builder().build();
+//        sheetNameStyleConfig.setBgColor(IndexedColors.GREY_25_PERCENT.index);
+//        sheetNameStyleConfig.setBold(true);
+//        sheetNameStyleConfig.setBorderStyle(BorderStyle.MEDIUM);
+//        AbstractCellStyleConfig headCellStyleConfig = HeadCellStyleConfig.builder().build();
+//        headCellStyleConfig.setBgColor(IndexedColors.GREY_25_PERCENT.index);
+//        headCellStyleConfig.setBold(true);
+//        headCellStyleConfig.setBorderStyle(BorderStyle.MEDIUM);
+//        AbstractCellStyleConfig contentCellStyleConfig = ContentCellStyleConfig.builder().build();
+//        contentCellStyleConfig.setBgColor(IndexedColors.WHITE.index);
+//        AbstractCellStyleConfig numberStyleConfig = ContentCellStyleConfig.builder().build();
 
         ExcelConfig excelConfig = ExcelConfig.builder()
-                .sheetNameStyleConfig(sheetNameStyleConfig)
-                .serialNumberStyleConfig(numberStyleConfig)
-                .headCellStyleConfig(headCellStyleConfig)
-                .contentCellStyleConfig(contentCellStyleConfig)
+//                .sheetNameStyleConfig(sheetNameStyleConfig)
+//                .serialNumberStyleConfig(numberStyleConfig)
+//                .headCellStyleConfig(headCellStyleConfig)
+//                .contentCellStyleConfig(contentCellStyleConfig)
                 .build();
         ExcelWriter.createExcelWriter("a.xlsx", excelConfig)
                 .write(Student.class, Collections.singletonList(student))

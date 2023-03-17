@@ -4,6 +4,7 @@ import com.zuijianren.excel.annotations.ExcelMultiProperty;
 import com.zuijianren.excel.annotations.ExcelProperty;
 import com.zuijianren.excel.annotations.ExcelSheet;
 import com.zuijianren.excel.annotations.style.ExcelContentCellStyle;
+import com.zuijianren.excel.annotations.style.ExcelExceSerialNumberCellStyle;
 import com.zuijianren.excel.annotations.style.ExcelHeadCellStyle;
 import com.zuijianren.excel.annotations.style.ExcelSheetNameStyle;
 import com.zuijianren.excel.config.PropertyConfig;
@@ -74,6 +75,7 @@ public class ExcelParser {
 
         // 样式解析
         AbstractCellStyleConfig sheetNameStyle = Optional.ofNullable(clazz.getAnnotation(ExcelSheetNameStyle.class)).map(this::parseExcelSheetNameStyle).orElse(null);
+        AbstractCellStyleConfig serialNumberStyle = Optional.ofNullable(clazz.getAnnotation(ExcelExceSerialNumberCellStyle.class)).map(this::parseExcelSerialNumberStyle).orElse(null);
         AbstractCellStyleConfig headStyle = Optional.ofNullable(clazz.getAnnotation(ExcelHeadCellStyle.class)).map(this::parseExcelHeadCellStyle).orElse(null);
         AbstractCellStyleConfig contentStyle = Optional.ofNullable(clazz.getAnnotation(ExcelContentCellStyle.class)).map(this::parseExcelContentCellStyle).orElse(null);
 
@@ -116,7 +118,6 @@ public class ExcelParser {
                 propertyConfig.setContentCellStyleConfig(contentStyle);
             }
 
-
             propertyConfigList.add(propertyConfig);
         }
 
@@ -126,9 +127,13 @@ public class ExcelParser {
         // 创建 sheetConfig 对象
         SheetConfig sheetConfig = SheetConfig.builder()
                 .sheetName(sheetName)
+                .showSheetName(sheetAnnotation.showSheetName())
+                .showSerialNumber(sheetAnnotation.showSerialNumber())
+                .freezeHead(sheetAnnotation.freezeHead())
                 .propertyConfigList(propertyConfigList)
                 // 样式配置
                 .sheetNameStyleConfig(sheetNameStyle)
+                .serialNumberStyleConfig(serialNumberStyle)
                 .headCellStyleConfig(headStyle)
                 .contentCellStyleConfig(contentStyle)
                 // 集合属性
@@ -277,4 +282,14 @@ public class ExcelParser {
         return null;
     }
 
+
+    /**
+     * 解析 ExcelSheetNameStyle 注解 获取配置
+     *
+     * @param cellStyle 样式注解对象
+     * @return 样式配置
+     */
+    private AbstractCellStyleConfig parseExcelSerialNumberStyle(ExcelExceSerialNumberCellStyle cellStyle) {
+        return null;
+    }
 }

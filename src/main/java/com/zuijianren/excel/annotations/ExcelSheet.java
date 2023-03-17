@@ -18,6 +18,12 @@ public @interface ExcelSheet {
     // sheet 表名
     String value() default "";
 
-    // 表头的顺序   从大到小
-    int order() default -1;
+    // 首行是否展示表名
+    boolean showSheetName() default true;
+
+    // 是否展示序列号
+    boolean showSerialNumber() default false;
+
+    // 是否冻结首行(sheetName)及表头
+    boolean freezeHead() default true;
 }

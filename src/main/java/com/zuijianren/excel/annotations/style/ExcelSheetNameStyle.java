@@ -6,7 +6,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * excel 表头样式配置注解
+ * excel sheet name 样式配置注解
  *
  * @author zuijianren
  * @date 2023/3/16 13:02

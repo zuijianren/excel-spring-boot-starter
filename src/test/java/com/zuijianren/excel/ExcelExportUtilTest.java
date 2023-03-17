@@ -87,6 +87,17 @@ public class ExcelExportUtilTest {
         cell2.setCellValue("a");
         cell2.setCellStyle(cellStyle);
 
+        //设置自动换行
+        cellStyle.setWrapText(true);
+
+        //默认字体为宋体
+        titleFont.setFontName("宋体");
+        //设置字体大小
+        titleFont.setFontHeight((short) 18);
+
+        sheet.createFreezePane(1, 1);
+        sheet.createFreezePane(1, 1, 0, 0);
+
 //        mergeColCell(sheet, 1, 2, 2);
 //        mergeColCell(sheet, 1, 3, 2);
 

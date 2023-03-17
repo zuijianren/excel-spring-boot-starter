@@ -126,23 +126,17 @@ public class ExcelWriter {
 
             // 首行创建
             if (sheetConfig.isShowSheetName()) {
-                // 获取 样式
-                AbstractCellStyleConfig sheetNameStyleConfig = sheetConfig.getSheetNameStyleConfig();
-                // 如果没有配置样式 则获取 excelConfig 中的样式(必定包含默认样式)
-                if (sheetNameStyleConfig == null) {
-                    sheetNameStyleConfig = excelConfig.getSheetNameStyleConfig();
-                }
-                assert sheetNameStyleConfig != null;
-                CellStyle cellStyle = sheetNameStyleConfig.createCellStyle(xssfWorkbook);
-                writeCell(sheet, rowPosition, 0, sheetConfig.getSheetName(), String.class, cellStyle); // 写入完成后 行数加1
-                mergeColCell(sheet, rowPosition, 0, sheetConfig.getColNum(), cellStyle);
-                rowPosition++;
+                writeSheetName(sheet, sheetConfig, rowPosition++);
             }
 
             // 表头创建
             writeHead(sheet, rowPosition, sheetConfig);
-            mergeSameHead(sheet, rowPosition, sheetConfig.getRowNum(), sheetConfig.getColNum());
             rowPosition = rowPosition + sheetConfig.getRowNum();
+
+            // 冻结首行和表头
+            if (sheetConfig.isFreezeHead()) {
+                sheet.createFreezePane(sheetConfig.getColNum(), rowPosition, 0, 0);
+            }
 
             // 内容创建
             writeContent(sheet, rowPosition, sheetConfig, dataList);
@@ -151,58 +145,6 @@ public class ExcelWriter {
         xssfWorkbook.write(os);
     }
 
-    /**
-     * 合并同名单元格(横向合并)
-     *
-     * @param sheet       sheet 对象
-     * @param rowPosition 行起始位置
-     * @param rowRange    行范围
-     * @param colRange    列范围
-     */
-    private void mergeSameHead(XSSFSheet sheet, int rowPosition, int rowRange, int colRange) {
-        for (int i = 0; i < rowRange; i++) {
-            int currentRowPosition = rowPosition + i;
-            XSSFRow selectRow = sheet.getRow(currentRowPosition); // 选中行
-            String flagValue = ""; // 标记值
-            int repeatNum = 0; // 重复值
-            for (int j = 0; j < colRange; j++) {
-                XSSFCell cell = selectRow.getCell(j);
-                if (cell == null) {
-                    // 如果重复值大于1 则进行合并单元格操作
-                    if (repeatNum > 1) {
-                        // 获取之前单元格的样式
-                        XSSFCell previousCell = selectRow.getCell(j - 1);
-                        XSSFCellStyle cellStyle = previousCell.getCellStyle();
-                        // 合并之前的重复单元格
-                        mergeColCell(sheet, currentRowPosition, j - repeatNum, repeatNum, cellStyle);
-                    }
-                    flagValue = "";
-                    repeatNum = 0;
-                    continue; //跳过
-                }
-                String currentValue = cell.getStringCellValue(); // 默认标题头都是字符串类型
-                assert currentValue != null;
-                if (flagValue.equals(currentValue) && !flagValue.equals("")) {
-                    repeatNum++;
-                } else {
-                    if (repeatNum > 1) {
-                        // 获取之前单元格的样式
-                        XSSFCell previousCell = selectRow.getCell(j - 1);
-                        XSSFCellStyle cellStyle = previousCell.getCellStyle();
-                        // 合并之前的重复单元格
-                        mergeColCell(sheet, currentRowPosition, j - repeatNum, repeatNum, cellStyle);
-                    }
-                    // 更新值
-                    flagValue = currentValue;
-                    repeatNum = 1;
-                }
-            }
-            // 获取之前单元格的样式
-            XSSFCell previousCell = selectRow.getCell(colRange - 1);
-            XSSFCellStyle cellStyle = previousCell.getCellStyle();
-            mergeColCell(sheet, currentRowPosition, colRange - repeatNum, repeatNum, cellStyle); // 退出循环前再合并一次
-        }
-    }
 
     /**
      * 写入内容
@@ -242,12 +184,7 @@ public class ExcelWriter {
         Map<Integer, CellStyle> singleColumnMap = new HashMap<>();  // 存储非multi的列和样式
         for (PropertyConfig propertyConfig : propertyConfigList) {
 
-            AbstractCellStyleConfig contentCellStyleConfig = propertyConfig.getContentCellStyleConfig();
-            if (contentCellStyleConfig == null) {
-                contentCellStyleConfig = excelConfig.getContentCellStyleConfig();
-            }
-            assert contentCellStyleConfig != null;
-            CellStyle cellStyle = contentCellStyleConfig.createCellStyle(excelConfig.getXssfWorkbook());
+            CellStyle cellStyle = getContentCellStyle(propertyConfig);
 
             // 获取 对应数据
             Field field = propertyConfig.getField();
@@ -255,7 +192,7 @@ public class ExcelWriter {
             try {
                 value = field.get(data); // 获取对应数据
             } catch (IllegalAccessException e) {
-                e.printStackTrace();
+                e.printStackTrace(); // 所有 field 都有设置  允许访问  不会抛出当前错误
             }
 
             // 写入数据
@@ -320,19 +257,21 @@ public class ExcelWriter {
         int size = sheetConfig.getRowNum();
         int colPosition = 0;
 
-        AbstractCellStyleConfig serialNumberStyleConfig = excelConfig.getSerialNumberStyleConfig();
-        CellStyle cellStyle = serialNumberStyleConfig.createCellStyle(excelConfig.getXssfWorkbook());
-
         // 处理序号列
         if (sheetConfig.isShowSerialNumber()) {
+            CellStyle cellStyle = getSerialNumberCellStyle(sheetConfig);
             mergeRowCell(sheet, rowPosition, colPosition, size, cellStyle);
             writeCell(sheet, rowPosition, colPosition++, "序号");
         }
+
         // 表头写入
         List<PropertyConfig> propertyConfigList = sheetConfig.getPropertyConfigList();
-
         writeHead(sheet, propertyConfigList, rowPosition, colPosition, size);
+
+        // 合并同名表头
+        mergeSameHead(sheet, rowPosition, sheetConfig.getRowNum(), sheetConfig.getColNum());
     }
+
 
     /**
      * 写入表头  (根据 propertyConfigList 进行写入)
@@ -345,13 +284,8 @@ public class ExcelWriter {
      */
     private void writeHead(XSSFSheet sheet, List<PropertyConfig> propertyConfigList, int rowPosition, int colPosition, int size) {
         for (PropertyConfig propertyConfig : propertyConfigList) {
-            // 获取 当前属性 标题 的 样式
-            AbstractCellStyleConfig cellStyleConfig = propertyConfig.getHeadCellStyleConfig();
-            if (cellStyleConfig == null) {
-                cellStyleConfig = excelConfig.getHeadCellStyleConfig();
-            }
-            assert cellStyleConfig != null;
-            CellStyle cellStyle = cellStyleConfig.createCellStyle(excelConfig.getXssfWorkbook());
+
+            CellStyle cellStyle = getHeadCellStyle(propertyConfig);
 
             int currentRowPosition = rowPosition; // 当前行数 每个属性单独计算
             if (!propertyConfig.isNested()) { // 处理非内嵌属性
@@ -383,6 +317,139 @@ public class ExcelWriter {
             }
             colPosition = colPosition + propertyConfig.getColNum();
         }
+    }
+
+
+    /**
+     * 合并同名单元格(横向合并)
+     *
+     * @param sheet       sheet 对象
+     * @param rowPosition 行起始位置
+     * @param rowRange    行范围
+     * @param colRange    列范围
+     */
+    private void mergeSameHead(XSSFSheet sheet, int rowPosition, int rowRange, int colRange) {
+        for (int i = 0; i < rowRange; i++) {
+            int currentRowPosition = rowPosition + i;
+            XSSFRow selectRow = sheet.getRow(currentRowPosition); // 选中行
+            String flagValue = ""; // 标记值
+            int repeatNum = 0; // 重复值
+            for (int j = 0; j < colRange; j++) {
+                XSSFCell cell = selectRow.getCell(j);
+                if (cell == null) {
+                    cell = selectRow.createCell(j);
+                }
+                String currentValue = cell.getStringCellValue(); // 默认标题头都是字符串类型
+                assert currentValue != null; // For blank cells we return an empty string
+                if (flagValue.equals(currentValue) && !flagValue.equals("")) {
+                    repeatNum++;
+                } else {
+                    if (repeatNum > 1) {
+                        // 获取之前单元格的样式
+                        mergeRepeatCol(sheet, currentRowPosition, j, repeatNum);
+                    }
+                    // 更新值
+                    flagValue = currentValue;
+                    repeatNum = 1;
+                }
+            }
+            // 获取之前单元格的样式
+            mergeRepeatCol(sheet, currentRowPosition, colRange, repeatNum);
+        }
+    }
+
+    /**
+     * 合并重复的列
+     *
+     * @param sheet       sheet 对象
+     * @param rowPosition 行
+     * @param colPosition 列位置(需要合并的单元格不包含当前列位置)
+     * @param repeatNum   重复树
+     */
+    private void mergeRepeatCol(XSSFSheet sheet, int rowPosition, int colPosition, int repeatNum) {
+        // 获取之前单元格的样式
+        XSSFRow row = sheet.getRow(rowPosition);
+        XSSFCell previousCell = row.getCell(colPosition - 1);
+        XSSFCellStyle cellStyle = previousCell.getCellStyle();
+        // 合并之前的重复单元格
+        mergeColCell(sheet, rowPosition, colPosition - repeatNum, repeatNum, cellStyle);
+    }
+
+
+    /**
+     * 写入 sheetName
+     *
+     * @param sheet       sheet 对象
+     * @param rowPosition 行位置
+     * @param sheetConfig sheet 配置
+     */
+    private void writeSheetName(XSSFSheet sheet, SheetConfig sheetConfig, int rowPosition) {
+        CellStyle cellStyle = getSheetNameStyle(sheetConfig);
+        writeCell(sheet, rowPosition, 0, sheetConfig.getSheetName(), String.class, cellStyle);
+        mergeColCell(sheet, rowPosition, 0, sheetConfig.getColNum(), cellStyle);
+    }
+
+
+    /**
+     * 获取 content 单元格样式
+     *
+     * @param propertyConfig property 配置
+     * @return content 单元格样式
+     */
+    private CellStyle getContentCellStyle(PropertyConfig propertyConfig) {
+        AbstractCellStyleConfig contentCellStyleConfig = propertyConfig.getContentCellStyleConfig();
+        if (contentCellStyleConfig == null) {
+            contentCellStyleConfig = excelConfig.getContentCellStyleConfig();
+        }
+        assert contentCellStyleConfig != null;
+        return contentCellStyleConfig.createCellStyle(excelConfig.getXssfWorkbook());
+    }
+
+    /**
+     * 获取表头的单元格样式
+     *
+     * @param propertyConfig property 配置
+     * @return 表头的单元格样式
+     */
+    private CellStyle getHeadCellStyle(PropertyConfig propertyConfig) {
+        // 获取 当前属性 标题 的 样式
+        AbstractCellStyleConfig cellStyleConfig = propertyConfig.getHeadCellStyleConfig();
+        if (cellStyleConfig == null) {
+            cellStyleConfig = excelConfig.getHeadCellStyleConfig();
+        }
+        assert cellStyleConfig != null;
+        return cellStyleConfig.createCellStyle(excelConfig.getXssfWorkbook());
+    }
+
+    /**
+     * 获取 序列号 的单元格 样式
+     *
+     * @param sheetConfig sheet 配置
+     * @return 序列号的单元格样式
+     */
+    private CellStyle getSerialNumberCellStyle(SheetConfig sheetConfig) {
+        AbstractCellStyleConfig serialNumberStyleConfig = sheetConfig.getSerialNumberStyleConfig();
+        if (serialNumberStyleConfig == null) {
+            serialNumberStyleConfig = excelConfig.getSerialNumberStyleConfig();
+        }
+        assert serialNumberStyleConfig != null;
+        return serialNumberStyleConfig.createCellStyle(excelConfig.getXssfWorkbook());
+    }
+
+    /**
+     * 获取 sheetName 的单元格样式
+     *
+     * @param sheetConfig sheet 配置
+     * @return sheetName 的单元格样式
+     */
+    private CellStyle getSheetNameStyle(SheetConfig sheetConfig) {
+        AbstractCellStyleConfig sheetNameStyleConfig = sheetConfig.getSheetNameStyleConfig();
+        // 如果没有配置样式 则获取 excelConfig 中的样式(必定包含默认样式)
+        if (sheetNameStyleConfig == null) {
+            sheetNameStyleConfig = excelConfig.getSheetNameStyleConfig();
+        }
+        assert sheetNameStyleConfig != null;
+        return sheetNameStyleConfig.createCellStyle(excelConfig.getXssfWorkbook());
     }
 
 

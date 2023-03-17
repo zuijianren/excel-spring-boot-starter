@@ -50,6 +50,23 @@ public class PropertyConfig implements Comparable<PropertyConfig> {
     private boolean nested;
 
     /**
+     * 字段类型
+     * <p>
+     * 当字段为集合时 type为对应的泛型 而非 集合类
+     */
+    private Class<?> type;
+
+    /**
+     * 反射的字段对象
+     */
+    private Field field;
+
+    /**
+     * 转换器
+     */
+    private Class<? extends ExcelConverter<?>> converter;
+
+    /**
      * 是否展示当前的名字(即 是否以当前名字包裹下一级的名字)
      * <p>
      * 仅限 nested 为 true 时, 解析当前值
@@ -62,23 +79,6 @@ public class PropertyConfig implements Comparable<PropertyConfig> {
      * 如果某个 property 为复杂对象, 则需要配置当前项
      */
     private List<PropertyConfig> childPropertyConfigList;
-
-    /**
-     * 转换器
-     */
-    private Class<? extends ExcelConverter<?>> converter;
-
-    /**
-     * 反射的字段对象
-     */
-    private Field field;
-
-    /**
-     * 字段类型
-     * <p>
-     * 当字段为集合时 type为对应的泛型 而非 集合类
-     */
-    private Class<?> type;
 
     /**
      * 标题单元格样式

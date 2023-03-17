@@ -17,6 +17,7 @@ import java.util.List;
 @Data
 public class SheetConfig {
 
+
     /**
      * 表名
      */
@@ -25,29 +26,33 @@ public class SheetConfig {
     /**
      * 首行是否展示表名
      */
-    @Builder.Default
-    private boolean showSheetName = true;
+    private boolean showSheetName;
 
     /**
      * 是否展示序号列
      */
-    @Builder.Default
-    private boolean showSerialNumber = false;
+    private boolean showSerialNumber;
+
+    /**
+     * 是否冻结标题行
+     */
+    private boolean freezeHead;
 
     /**
      * 属性
      */
     private List<PropertyConfig> propertyConfigList;
 
-    /**
-     * 对象中是否有字段含有 multi 属性
-     */
-    private boolean hasMulti;
 
     /**
-     * sheet 名字 配置
+     * sheet 名字样式配置
      */
     private AbstractCellStyleConfig sheetNameStyleConfig;
+
+    /**
+     * 序列号样式
+     */
+    private AbstractCellStyleConfig serialNumberStyleConfig;
 
     /**
      * 标题单元格样式
@@ -62,6 +67,12 @@ public class SheetConfig {
      * 如果当前为空 则写入数据时   采用上一级的配置进行写入
      */
     private AbstractCellStyleConfig contentCellStyleConfig;
+
+
+    /**
+     * 对象中是否有字段含有 multi 属性
+     */
+    private boolean hasMulti;
 
     /**
      * 根据当前配置 计算列数

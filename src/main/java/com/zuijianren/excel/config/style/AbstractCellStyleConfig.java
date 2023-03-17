@@ -1,6 +1,7 @@
 package com.zuijianren.excel.config.style;
 
 import lombok.Data;
+import lombok.experimental.SuperBuilder;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFCellStyle;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -27,7 +28,7 @@ public abstract class AbstractCellStyleConfig {
     // 边框样式
     private BorderStyle borderStyle = BorderStyle.THIN;
 
-    // 粗细
+    // 字体是否加粗
     private boolean bold = false;
 
     public CellStyle createCellStyle(XSSFWorkbook xssfWorkbook) {

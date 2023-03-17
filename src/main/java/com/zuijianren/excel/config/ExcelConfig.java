@@ -24,25 +24,25 @@ public class ExcelConfig {
      * sheet 名字 配置
      */
     @Builder.Default
-    private AbstractCellStyleConfig sheetNameStyleConfig = SheetNameStyleConfig.builder().build();
+    private AbstractCellStyleConfig sheetNameStyleConfig = new SheetNameStyleConfig();
 
     /**
      * 序号列样式
      */
     @Builder.Default
-    private AbstractCellStyleConfig serialNumberStyleConfig = SerialNumberStyleConfig.builder().build();
+    private AbstractCellStyleConfig serialNumberStyleConfig = new SerialNumberStyleConfig();
 
     /**
      * 标题单元格样式
      */
     @Builder.Default
-    private AbstractCellStyleConfig headCellStyleConfig = HeadCellStyleConfig.builder().build();
+    private AbstractCellStyleConfig headCellStyleConfig = new HeadCellStyleConfig();
 
     /**
      * 内容单元格样式
      */
     @Builder.Default
-    private AbstractCellStyleConfig contentCellStyleConfig = ContentCellStyleConfig.builder().build();
+    private AbstractCellStyleConfig contentCellStyleConfig = new ContentCellStyleConfig();
 
 
 }

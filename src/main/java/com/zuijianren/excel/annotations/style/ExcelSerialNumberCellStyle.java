@@ -10,14 +10,14 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * excel 内容样式配置注解
+ * excel 序列号样式配置注解
  *
  * @author zuijianren
  * @date 2023/3/16 13:02
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.FIELD, ElementType.TYPE})
-public @interface ExcelContentCellStyle {
+@Target({ElementType.TYPE})
+public @interface ExcelSerialNumberCellStyle {
 
     /**
      * 根据默认构造方法创建对象 管理样式配置
@@ -30,7 +30,7 @@ public @interface ExcelContentCellStyle {
     IndexedColors fontColor() default IndexedColors.BLACK;
 
     // 背景颜色
-    IndexedColors bgColor() default IndexedColors.WHITE;
+    IndexedColors bgColor() default IndexedColors.GREY_40_PERCENT;
 
     // 边框颜色
     IndexedColors borderColor() default IndexedColors.BLACK;

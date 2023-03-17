@@ -61,7 +61,7 @@ public class ExcelExportUtilTest {
                 .build();
         ExcelWriter.createExcelWriter("a.xlsx", excelConfig)
                 .write(Student.class, Collections.singletonList(student))
-                .write(Teacher.class, Collections.singletonList(teacher))
+                .write(Teacher.class, Arrays.asList(teacher, teacher))
                 .doWrite();
     }
 

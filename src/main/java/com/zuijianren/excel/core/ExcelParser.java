@@ -4,18 +4,16 @@ import com.zuijianren.excel.annotations.ExcelMultiProperty;
 import com.zuijianren.excel.annotations.ExcelProperty;
 import com.zuijianren.excel.annotations.ExcelSheet;
 import com.zuijianren.excel.annotations.style.ExcelContentCellStyle;
-import com.zuijianren.excel.annotations.style.ExcelExceSerialNumberCellStyle;
 import com.zuijianren.excel.annotations.style.ExcelHeadCellStyle;
+import com.zuijianren.excel.annotations.style.ExcelSerialNumberCellStyle;
 import com.zuijianren.excel.annotations.style.ExcelSheetNameStyle;
 import com.zuijianren.excel.config.PropertyConfig;
 import com.zuijianren.excel.config.SheetConfig;
-import com.zuijianren.excel.config.style.AbstractCellStyleConfig;
-import com.zuijianren.excel.config.style.HeadCellStyleConfig;
+import com.zuijianren.excel.config.style.*;
 import com.zuijianren.excel.exceptions.ParserException;
 import lombok.extern.slf4j.Slf4j;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.*;
 import java.util.*;
 
 /**
@@ -75,7 +73,7 @@ public class ExcelParser {
 
         // 样式解析
         AbstractCellStyleConfig sheetNameStyle = Optional.ofNullable(clazz.getAnnotation(ExcelSheetNameStyle.class)).map(this::parseExcelSheetNameStyle).orElse(null);
-        AbstractCellStyleConfig serialNumberStyle = Optional.ofNullable(clazz.getAnnotation(ExcelExceSerialNumberCellStyle.class)).map(this::parseExcelSerialNumberStyle).orElse(null);
+        AbstractCellStyleConfig serialNumberStyle = Optional.ofNullable(clazz.getAnnotation(ExcelSerialNumberCellStyle.class)).map(this::parseExcelSerialNumberStyle).orElse(null);
         AbstractCellStyleConfig headStyle = Optional.ofNullable(clazz.getAnnotation(ExcelHeadCellStyle.class)).map(this::parseExcelHeadCellStyle).orElse(null);
         AbstractCellStyleConfig contentStyle = Optional.ofNullable(clazz.getAnnotation(ExcelContentCellStyle.class)).map(this::parseExcelContentCellStyle).orElse(null);
 
@@ -248,16 +246,43 @@ public class ExcelParser {
                 .build();
     }
 
+
     /**
-     * 解析 ExcelContentCellStyle 注解 获取配置
+     * 解析 ExcelSheetNameStyle 注解 获取配置
      *
      * @param cellStyle 样式注解对象
      * @return 样式配置
      */
-    private AbstractCellStyleConfig parseExcelContentCellStyle(ExcelContentCellStyle cellStyle) {
-        return HeadCellStyleConfig.builder()
-                // todo 解析
-                .build();
+    private AbstractCellStyleConfig parseExcelSheetNameStyle(ExcelSheetNameStyle cellStyle) {
+        AbstractCellStyleConfig declaredConstructor = getStyleConfig(cellStyle.styleConfig());
+        if (declaredConstructor != null) return declaredConstructor;
+        // 根据其余配置 创建
+        SheetNameStyleConfig styleConfig = new SheetNameStyleConfig();
+        styleConfig.setFontColor(cellStyle.fontColor().index);
+        styleConfig.setBgColor(cellStyle.bgColor().index);
+        styleConfig.setBorderStyle(cellStyle.borderStyle());
+        styleConfig.setBorderColor(cellStyle.borderColor().index);
+        styleConfig.setBold(cellStyle.bold());
+        return styleConfig;
+    }
+
+    /**
+     * 解析 ExcelSerialNumberCellStyle 注解 获取配置
+     *
+     * @param cellStyle 样式注解对象
+     * @return 样式配置
+     */
+    private AbstractCellStyleConfig parseExcelSerialNumberStyle(ExcelSerialNumberCellStyle cellStyle) {
+        AbstractCellStyleConfig declaredConstructor = getStyleConfig(cellStyle.styleConfig());
+        if (declaredConstructor != null) return declaredConstructor;
+        // 根据其余配置 创建
+        SerialNumberStyleConfig styleConfig = new SerialNumberStyleConfig();
+        styleConfig.setFontColor(cellStyle.fontColor().index);
+        styleConfig.setBgColor(cellStyle.bgColor().index);
+        styleConfig.setBorderStyle(cellStyle.borderStyle());
+        styleConfig.setBorderColor(cellStyle.borderColor().index);
+        styleConfig.setBold(cellStyle.bold());
+        return styleConfig;
     }
 
     /**
@@ -267,29 +292,61 @@ public class ExcelParser {
      * @return 样式配置
      */
     private AbstractCellStyleConfig parseExcelHeadCellStyle(ExcelHeadCellStyle cellStyle) {
-        return HeadCellStyleConfig.builder()
-                // todo 解析
-                .build();
-    }
-
-    /**
-     * 解析 ExcelSheetNameStyle 注解 获取配置
-     *
-     * @param cellStyle 样式注解对象
-     * @return 样式配置
-     */
-    private AbstractCellStyleConfig parseExcelSheetNameStyle(ExcelSheetNameStyle cellStyle) {
-        return null;
+        AbstractCellStyleConfig declaredConstructor = getStyleConfig(cellStyle.styleConfig());
+        if (declaredConstructor != null) return declaredConstructor;
+        // 根据其余配置 创建
+        HeadCellStyleConfig styleConfig = new HeadCellStyleConfig();
+        styleConfig.setFontColor(cellStyle.fontColor().index);
+        styleConfig.setBgColor(cellStyle.bgColor().index);
+        styleConfig.setBorderStyle(cellStyle.borderStyle());
+        styleConfig.setBorderColor(cellStyle.borderColor().index);
+        styleConfig.setBold(cellStyle.bold());
+        return styleConfig;
     }
 
 
     /**
-     * 解析 ExcelSheetNameStyle 注解 获取配置
+     * 解析 ExcelContentCellStyle 注解 获取配置
      *
      * @param cellStyle 样式注解对象
      * @return 样式配置
      */
-    private AbstractCellStyleConfig parseExcelSerialNumberStyle(ExcelExceSerialNumberCellStyle cellStyle) {
+    private AbstractCellStyleConfig parseExcelContentCellStyle(ExcelContentCellStyle cellStyle) {
+        AbstractCellStyleConfig declaredConstructor = getStyleConfig(cellStyle.styleConfig());
+        if (declaredConstructor != null) return declaredConstructor;
+        // 根据其余配置 创建
+        ContentCellStyleConfig styleConfig = new ContentCellStyleConfig();
+        styleConfig.setFontColor(cellStyle.fontColor().index);
+        styleConfig.setBgColor(cellStyle.bgColor().index);
+        styleConfig.setBorderStyle(cellStyle.borderStyle());
+        styleConfig.setBorderColor(cellStyle.borderColor().index);
+        styleConfig.setBold(cellStyle.bold());
+        return styleConfig;
+    }
+
+
+    /**
+     * 获取样式配置
+     *
+     * @param clazz 注解配置的  AbstractCellStyleConfig 实现类
+     * @return
+     */
+    private AbstractCellStyleConfig getStyleConfig(Class<? extends AbstractCellStyleConfig> clazz) {
+        // 如果 clazz 不是默认的类 而是用户自定义的类
+        if (!clazz.equals(AbstractCellStyleConfig.class)) {
+            if (Modifier.isAbstract(clazz.getModifiers())) {
+                throw new IllegalArgumentException("如需 'styleConfig' 属性配置生效, 则不能使用抽象类");
+            }
+            Constructor<? extends AbstractCellStyleConfig> declaredConstructor = null;
+            try {
+                declaredConstructor = clazz.getDeclaredConstructor();
+                return declaredConstructor.newInstance();
+            } catch (NoSuchMethodException | InvocationTargetException | InstantiationException | IllegalAccessException e) {
+                throw new RuntimeException(clazz.getName() + "未获取到默认构造方法, 创建对象失败");
+            }
+        }
         return null;
     }
+
+
 }

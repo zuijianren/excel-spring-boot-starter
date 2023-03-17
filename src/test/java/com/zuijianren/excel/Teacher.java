@@ -3,7 +3,9 @@ package com.zuijianren.excel;
 import com.zuijianren.excel.annotations.ExcelMultiProperty;
 import com.zuijianren.excel.annotations.ExcelProperty;
 import com.zuijianren.excel.annotations.ExcelSheet;
+import com.zuijianren.excel.annotations.style.ExcelSheetNameStyle;
 import lombok.Data;
+import org.apache.poi.ss.usermodel.IndexedColors;
 
 import java.util.List;
 
@@ -13,6 +15,7 @@ import java.util.List;
  */
 @ExcelSheet("教师表")
 @Data
+@ExcelSheetNameStyle(bgColor = IndexedColors.AQUA)
 public class Teacher {
 
     private Integer id;

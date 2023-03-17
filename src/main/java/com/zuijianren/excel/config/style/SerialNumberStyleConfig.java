@@ -2,7 +2,8 @@ package com.zuijianren.excel.config.style;
 
 import lombok.Builder;
 import lombok.Data;
-import org.apache.poi.ss.usermodel.IndexedColors;
+
+import static com.zuijianren.excel.constants.StyleConstant.*;
 
 /**
  * excel 单元格样式 封装对象
@@ -18,6 +19,7 @@ public class SerialNumberStyleConfig extends AbstractCellStyleConfig {
     public SerialNumberStyleConfig() {
         /*=== 设置默认值 ===*/
         // 灰色背景
-        setBgColor(IndexedColors.GREY_40_PERCENT.index);
+        setBgColor(SerialNumber_BgColor.index);
+        setBold(SerialNumber_Bold);
     }
 }

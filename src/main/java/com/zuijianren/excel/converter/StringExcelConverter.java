@@ -6,11 +6,14 @@ package com.zuijianren.excel.converter;
  * @author zuijianren
  * @date 2023/3/13 10:38
  */
-public class DefaultExcelConverter implements ExcelConverter<String> {
+public class StringExcelConverter implements ExcelConverter<String> {
 
     @Override
     public String convert(Object obj) {
-        System.out.println("test");
         return "318";
+    }
+
+    public StringExcelConverter() {
+        System.out.println("construct");
     }
 }

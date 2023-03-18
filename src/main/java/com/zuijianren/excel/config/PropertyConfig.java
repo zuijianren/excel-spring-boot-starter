@@ -64,7 +64,7 @@ public class PropertyConfig implements Comparable<PropertyConfig> {
     /**
      * 转换器
      */
-    private Class<? extends ExcelConverter<?>> converter;
+    private ExcelConverter converter;
 
     /**
      * 是否展示当前的名字(即 是否以当前名字包裹下一级的名字)

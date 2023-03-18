@@ -10,8 +10,11 @@ import com.zuijianren.excel.annotations.style.ExcelSheetNameStyle;
 import com.zuijianren.excel.config.PropertyConfig;
 import com.zuijianren.excel.config.SheetConfig;
 import com.zuijianren.excel.config.style.*;
+import com.zuijianren.excel.converter.DefaultExcelConverter;
+import com.zuijianren.excel.converter.ExcelConverter;
 import com.zuijianren.excel.exceptions.ParserException;
 import lombok.extern.slf4j.Slf4j;
+import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl;
 
 import java.lang.reflect.*;
 import java.util.*;
@@ -27,6 +30,8 @@ import java.util.*;
 public class ExcelParser {
 
     private final Map<Class<?>, SheetConfig> sheetConfigCache = new HashMap<>();
+
+    private final Map<Class<? extends ExcelConverter>, ExcelConverter> converterMap = new HashMap<>();
 
     private static final ExcelParser instance = new ExcelParser();
 
@@ -176,6 +181,28 @@ public class ExcelParser {
             }
         }
 
+        ExcelConverter<?> converter = null;
+        Class<? extends ExcelConverter<?>> converterClazz = multiPropertyAnnotation.converter();
+        if (converterClazz != null && converterClazz != DefaultExcelConverter.class) {
+            try {
+                converter = converterMap.get(converterClazz);
+                if (converter == null) {
+                    converter = converterClazz.getConstructor().newInstance();
+                    converterMap.put(converterClazz, converter);
+                }
+                // 更新目标对象
+                genericClass = ((ParameterizedTypeImpl) converterClazz.getGenericInterfaces()[0]).getActualTypeArguments()[0].getClass();
+            } catch (InstantiationException e) {
+                throw new RuntimeException(e);
+            } catch (IllegalAccessException e) {
+                throw new RuntimeException(e);
+            } catch (InvocationTargetException e) {
+                throw new RuntimeException(e);
+            } catch (NoSuchMethodException e) {
+                throw new RuntimeException("没有找到转换器的空参构造方法");
+            }
+        }
+
         // 创建 propertyConfig 对象
         return PropertyConfig.builder()
                 // 基础属性
@@ -187,7 +214,7 @@ public class ExcelParser {
                 .headCellStyleConfig(headStyle)
                 .contentCellStyleConfig(contentStyle)
                 // 转换器
-                .converter(multiPropertyAnnotation.converter())
+                .converter(converter)
                 // 内嵌属性相关
                 .nested(multiPropertyAnnotation.nested())
                 .showCurrentName(multiPropertyAnnotation.showCurrentName())
@@ -225,6 +252,28 @@ public class ExcelParser {
             }
         }
 
+        ExcelConverter<?> converter = null;
+        Class<? extends ExcelConverter<?>> converterClazz = propertyAnnotation.converter();
+        if (converterClazz != null && converterClazz != DefaultExcelConverter.class) {
+            try {
+                converter = converterMap.get(converterClazz);
+                if (converter == null) {
+                    converter = converterClazz.getConstructor().newInstance();
+                    converterMap.put(converterClazz, converter);
+                }
+                // 更新目标对象
+                type = (Class) ((ParameterizedTypeImpl) converterClazz.getGenericInterfaces()[0]).getActualTypeArguments()[0];
+            } catch (InstantiationException e) {
+                throw new RuntimeException(e);
+            } catch (IllegalAccessException e) {
+                throw new RuntimeException(e);
+            } catch (InvocationTargetException e) {
+                throw new RuntimeException(e);
+            } catch (NoSuchMethodException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
         // 创建 propertyConfig 对象
         return PropertyConfig.builder()
                 // 基础属性
@@ -236,7 +285,7 @@ public class ExcelParser {
                 .headCellStyleConfig(headStyle)
                 .contentCellStyleConfig(contentStyle)
                 // 转换器
-                .converter(propertyAnnotation.converter())
+                .converter(converter)
                 // 内嵌属性相关
                 .showCurrentName(propertyAnnotation.showCurrentName())
                 .nested(propertyAnnotation.nested())
@@ -341,7 +390,8 @@ public class ExcelParser {
             try {
                 declaredConstructor = clazz.getDeclaredConstructor();
                 return declaredConstructor.newInstance();
-            } catch (NoSuchMethodException | InvocationTargetException | InstantiationException | IllegalAccessException e) {
+            } catch (NoSuchMethodException | InvocationTargetException | InstantiationException |
+                     IllegalAccessException e) {
                 throw new RuntimeException(clazz.getName() + "未获取到默认构造方法, 创建对象失败");
             }
         }

@@ -4,6 +4,7 @@ import com.zuijianren.excel.config.ExcelConfig;
 import com.zuijianren.excel.config.PropertyConfig;
 import com.zuijianren.excel.config.SheetConfig;
 import com.zuijianren.excel.config.style.AbstractCellStyleConfig;
+import com.zuijianren.excel.converter.ExcelConverter;
 import com.zuijianren.excel.pojo.ExcelData;
 import lombok.Data;
 import org.apache.poi.ss.usermodel.CellStyle;
@@ -64,11 +65,9 @@ public class ExcelWriter {
         if (!".xlsx".equals(suffix)) {
             throw new IllegalArgumentException("文件类型错误. 仅允许写入 xlsx 类型文件");
         }
-        // 判断文件是否存在
-        if (!file.exists()) {
-            // 如果不存在 则 创建文件
-            file.createNewFile(); // 返回结果忽略
-        }
+        // 如果存在 则删除原文件
+        file.deleteOnExit();
+        file.createNewFile(); // 返回结果忽略
         return createExcelWriter(new FileOutputStream(file), excelConfig);
     }
 
@@ -191,14 +190,16 @@ public class ExcelWriter {
             Object value = null;
             try {
                 value = field.get(data); // 获取对应数据
+                ExcelConverter converter = propertyConfig.getConverter();
+                if (converter != null) {
+                    value = converter.convert(value);
+                }
             } catch (IllegalAccessException e) {
                 e.printStackTrace(); // 所有 field 都有设置  允许访问  不会抛出当前错误
             }
 
             // 写入数据
             if (!propertyConfig.isMulti()) {
-                // todo ExcelConverter 调用及实现
-                // todo 空值 替代值 处理
                 if (propertyConfig.isNested()) {
                     // 嵌套属性则依次递归调用当前方法  依次写入
                     writeData(sheet, rowPosition, colPosition, value, propertyConfig.getChildPropertyConfigList());

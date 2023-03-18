@@ -25,5 +25,5 @@ public @interface ExcelSheet {
     boolean showSerialNumber() default false;
 
     // 是否冻结首行(sheetName)及表头
-    boolean freezeHead() default true;
+    boolean freezeHead() default false;
 }

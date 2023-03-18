@@ -4,6 +4,7 @@ import com.zuijianren.excel.annotations.ExcelMultiProperty;
 import com.zuijianren.excel.annotations.ExcelProperty;
 import com.zuijianren.excel.annotations.ExcelSheet;
 import com.zuijianren.excel.annotations.style.ExcelSheetNameStyle;
+import com.zuijianren.excel.converter.StringExcelConverter;
 import lombok.Data;
 import org.apache.poi.ss.usermodel.IndexedColors;
 
@@ -19,7 +20,7 @@ import java.util.List;
 public class Teacher {
 
     private Integer id;
-    @ExcelProperty(value = {"年龄"})
+    @ExcelProperty(value = {"年龄"}, converter = StringExcelConverter.class)
     private Integer age;
 
 

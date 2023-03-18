@@ -2,10 +2,10 @@ package com.zuijianren.excel;
 
 import com.zuijianren.excel.config.ExcelConfig;
 import com.zuijianren.excel.core.ExcelWriter;
-import org.apache.poi.ss.usermodel.FillPatternType;
-import org.apache.poi.ss.usermodel.Font;
-import org.apache.poi.ss.usermodel.IndexedColors;
-import org.apache.poi.xssf.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFCell;
+import org.apache.poi.xssf.usermodel.XSSFRow;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -70,33 +70,36 @@ public class ExcelExportUtilTest {
         XSSFWorkbook xssfWorkbook = new XSSFWorkbook();
         XSSFSheet sheet = xssfWorkbook.createSheet();
         XSSFRow row = sheet.createRow(1);
+        row.createCell(1);
         XSSFCell cell = row.createCell(2);
-        cell.setCellValue("a");
-
-        XSSFCellStyle cellStyle = xssfWorkbook.createCellStyle();
-
-        Font titleFont = xssfWorkbook.createFont();
-        titleFont.setBold(true); // 设置为粗体
-        titleFont.setColor(IndexedColors.PINK.index);
-        cellStyle.setFont(titleFont);
-
-        cellStyle.setFillBackgroundColor(IndexedColors.BLUE.getIndex());
-        cellStyle.setFillPattern(FillPatternType.LEAST_DOTS);
-
         XSSFCell cell2 = row.createCell(3);
+        cell.setCellValue("a");
         cell2.setCellValue("a");
-        cell2.setCellStyle(cellStyle);
+//
+//        XSSFCellStyle cellStyle = xssfWorkbook.createCellStyle();
+//
+//        Font titleFont = xssfWorkbook.createFont();
+//        titleFont.setBold(true); // 设置为粗体
+//        titleFont.setColor(IndexedColors.PINK.index);
+//        cellStyle.setFont(titleFont);
+//
+//        cellStyle.setFillBackgroundColor(IndexedColors.BLUE.getIndex());
+//        cellStyle.setFillPattern(FillPatternType.LEAST_DOTS);
+
+//        cell2.setCellStyle(cellStyle);
+
+//        sheet.createFreezePane(0, 0 ,0, 0);
 
         //设置自动换行
-        cellStyle.setWrapText(true);
+//        cellStyle.setWrapText(true);
+//
+//        //默认字体为宋体
+//        titleFont.setFontName("宋体");
+//        //设置字体大小
+//        titleFont.setFontHeight((short) 18);
 
-        //默认字体为宋体
-        titleFont.setFontName("宋体");
-        //设置字体大小
-        titleFont.setFontHeight((short) 18);
-
-        sheet.createFreezePane(1, 1);
-        sheet.createFreezePane(1, 1, 0, 0);
+//        sheet.createFreezePane(1, 1);
+//        sheet.createFreezePane(1, 1, 0, 0);
 
 //        mergeColCell(sheet, 1, 2, 2);
 //        mergeColCell(sheet, 1, 3, 2);

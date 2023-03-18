@@ -6,4 +6,5 @@ package com.zuijianren.excel.converter;
  */
 public interface ExcelConverter<T> {
 
+    T convert(Object obj);
 }

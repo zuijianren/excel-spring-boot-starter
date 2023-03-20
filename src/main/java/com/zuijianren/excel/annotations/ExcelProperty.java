@@ -26,7 +26,7 @@ public @interface ExcelProperty {
     int order() default -1;
 
     // 转换器 用于处理类型转换
-    Class<? extends ExcelConverter<?>> converter() default DefaultExcelConverter.class;
+    Class<? extends ExcelConverter<?, ?>> converter() default DefaultExcelConverter.class;
 
     // 内嵌
     boolean nested() default false;

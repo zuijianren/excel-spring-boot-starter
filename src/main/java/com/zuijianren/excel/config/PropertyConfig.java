@@ -50,11 +50,11 @@ public class PropertyConfig implements Comparable<PropertyConfig> {
     private boolean nested;
 
     /**
-     * 字段类型
+     * 写入类型(通常情况下 为字段类型)
      * <p>
      * 当字段为集合时 type为对应的泛型 而非 集合类
      */
-    private Class<?> type;
+    private Class<?> writeType;
 
     /**
      * 反射的字段对象

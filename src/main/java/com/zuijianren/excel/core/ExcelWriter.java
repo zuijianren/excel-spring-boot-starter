@@ -75,6 +75,10 @@ public class ExcelWriter {
         return createExcelWriter(new FileOutputStream(file), excelConfig);
     }
 
+    public static ExcelWriter createExcelWriter(OutputStream os) throws IOException {
+        return createExcelWriter(os, null);
+    }
+
     /**
      * 创建 ExcelWriter 对象
      *
@@ -189,48 +193,47 @@ public class ExcelWriter {
 
             CellStyle cellStyle = getContentCellStyle(propertyConfig);
 
+            // 获取转换器
+            ExcelConverter converter = propertyConfig.getConverter();
+
             // 获取 对应数据
             Field field = propertyConfig.getField();
-            Object value = null;
-            try {
-                value = field.get(data); // 获取对应数据
-                ExcelConverter converter = propertyConfig.getConverter();
-                if (converter != null) {
-                    value = converter.convert(value);
-                }
-            } catch (IllegalAccessException e) {
-                e.printStackTrace(); // 所有 field 都有设置  允许访问  不会抛出当前错误
-            }
+            Object value = getValue(field, data, converter); // 获取填充数据
 
             // 写入数据
             if (!propertyConfig.isMulti()) {
-                if (propertyConfig.isNested()) {
+                if (!propertyConfig.isNested()) {
+                    // 普通属性  直接写入 并且 colPosition 加1
+                    writeCell(sheet, rowPosition, colPosition++, value, propertyConfig.getWriteType(), cellStyle);
+                    singleColumnMap.put(colPosition - 1, cellStyle);
+                } else {
                     // 嵌套属性则依次递归调用当前方法  依次写入
                     writeData(sheet, rowPosition, colPosition, value, propertyConfig.getChildPropertyConfigList());
                     colPosition += propertyConfig.getColNum();
                     for (int i = colPosition - propertyConfig.getColNum(); i < colPosition; i++) {
                         singleColumnMap.put(i, cellStyle);
                     }
-                } else {
-                    // 普通属性  直接写入 并且 colPosition 加1
-                    writeCell(sheet, rowPosition, colPosition++, value, propertyConfig.getType(), cellStyle);
-                    singleColumnMap.put(colPosition - 1, cellStyle);
                 }
                 rowNumCount = Math.max(rowNumCount, 1); // 仅占一行
             } else {
                 Collection collection = (Collection) value; // 强转为 集合
-                int currentRowPosition = rowPosition;
+                int currentRowPosition = rowPosition; // 标记行位置
+
                 // 非嵌套对象
                 if (!propertyConfig.isNested()) {
                     for (Object currentValue : collection) {
                         // 写入多行数据
-                        writeCell(sheet, currentRowPosition++, colPosition, currentValue, propertyConfig.getType(), cellStyle);
+                        writeCell(sheet, currentRowPosition++, colPosition, currentValue, propertyConfig.getWriteType(), cellStyle);
                     }
                     colPosition++;
                     rowNumCount = Math.max(rowNumCount, collection.size()); // 占多行
                 } else {
                     // 嵌套对象
-                    if (value == null) {
+
+                    // 集合对象 判空  空对象会导致for循环报错  需要单独处理
+                    if (collection == null) {
+                        // 写一行数据
+                        writeData(sheet, currentRowPosition, colPosition, value, propertyConfig.getChildPropertyConfigList());
                         rowNumCount = Math.max(rowNumCount, 1);
                     } else {
                         int totalChildRowNum = 0; // 对应对象所占的总行数
@@ -457,5 +460,28 @@ public class ExcelWriter {
         return sheetNameStyleConfig.createCellStyle(excelConfig.getXssfWorkbook());
     }
 
+
+    /**
+     * 获取写入数据
+     *
+     * @param field     属性
+     * @param data      数据对象
+     * @param converter 转换器
+     * @return 写入数据
+     */
+    private Object getValue(Field field, Object data, ExcelConverter converter) {
+        Object value = null;
+        if (data != null) {
+            try {
+                value = field.get(data); // 获取对应数据
+            } catch (IllegalAccessException e) {
+                e.printStackTrace(); // 忽略即可
+            }
+            if (converter != null) {
+                value = converter.convert(value);
+            }
+        }
+        return value;
+    }
 
 }

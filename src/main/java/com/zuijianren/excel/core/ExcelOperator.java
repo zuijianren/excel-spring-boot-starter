@@ -118,6 +118,11 @@ public class ExcelOperator {
      * @param type        对应类型
      */
     public static void writeCell(XSSFSheet sheet, int rowPosition, int colPosition, Object value, Class<?> type, CellStyle cellStyle) {
+        // 如果数据为空 则按照空字符串写入
+        if (value == null) {
+            writeCell(sheet, rowPosition, colPosition, "", String.class, cellStyle);
+            return;
+        }
         XSSFCell cell = null;
         // 根据 type 进行解析
         if (Integer.class.isAssignableFrom(type)) {
@@ -177,11 +182,11 @@ public class ExcelOperator {
         // 合并后 追加样式
         for (int i = region.getFirstColumn(); i <= region.getLastColumn(); i++) {
             XSSFRow row = sheet.getRow(rowPosition);
-            if(row==null){
+            if (row == null) {
                 row = sheet.createRow(rowPosition);
             }
             XSSFCell cell = row.getCell(i);
-            if(cell==null){
+            if (cell == null) {
                 cell = row.createCell(i);
             }
             cell.setCellStyle(cellStyle);
@@ -207,11 +212,11 @@ public class ExcelOperator {
         // 合并后 追加样式
         for (int i = region.getFirstRow(); i <= region.getLastRow(); i++) {
             XSSFRow row = sheet.getRow(i);
-            if(row==null){
+            if (row == null) {
                 row = sheet.createRow(i);
             }
             XSSFCell cell = row.getCell(colPosition);
-            if(cell==null){
+            if (cell == null) {
                 cell = row.createCell(colPosition);
             }
             cell.setCellStyle(cellStyle);

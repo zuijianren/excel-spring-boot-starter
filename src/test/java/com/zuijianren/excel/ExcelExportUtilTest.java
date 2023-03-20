@@ -1,6 +1,5 @@
 package com.zuijianren.excel;
 
-import com.zuijianren.excel.config.ExcelConfig;
 import com.zuijianren.excel.core.ExcelWriter;
 import org.apache.poi.xssf.usermodel.XSSFCell;
 import org.apache.poi.xssf.usermodel.XSSFRow;
@@ -34,7 +33,7 @@ public class ExcelExportUtilTest {
         teacher = new Teacher(1, 28, "姜老师");
         Teacher2 teacher2 = new Teacher2(1, 28, "姜老师");
         teacher.setNickNameList(Arrays.asList("小姜", "老姜"));
-        teacher.setStudentList(Arrays.asList(student, student2));
+        teacher.setStudentList(null);
         teacher.setTeacher2(teacher2);
     }
 
@@ -53,12 +52,12 @@ public class ExcelExportUtilTest {
 //        contentCellStyleConfig.setBgColor(IndexedColors.WHITE.index);
 //        AbstractCellStyleConfig numberStyleConfig = ContentCellStyleConfig.builder().build();
 
-        ExcelConfig excelConfig = ExcelConfig.builder()
+//        ExcelConfig excelConfig = ExcelConfig.builder()
 //                .sheetNameStyleConfig(sheetNameStyleConfig)
 //                .serialNumberStyleConfig(numberStyleConfig)
 //                .headCellStyleConfig(headCellStyleConfig)
 //                .contentCellStyleConfig(contentCellStyleConfig)
-                .build();
+//                .build();
         ExcelWriter.createExcelWriter("a.xlsx")
                 .write(Student.class, Collections.singletonList(student))
                 .write(Teacher.class, Arrays.asList(teacher, teacher))

@@ -28,7 +28,7 @@ public @interface ExcelMultiProperty {
     int order() default -1;
 
     // 转换器 用于处理类型转换 将当前对象转换为字符串
-    Class<? extends ExcelConverter<?>> converter() default DefaultExcelConverter.class;
+    Class<? extends ExcelConverter<?, ?>> converter() default DefaultExcelConverter.class;
 
     // 内嵌
     boolean nested() default false;

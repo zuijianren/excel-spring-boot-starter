@@ -181,26 +181,15 @@ public class ExcelParser {
             }
         }
 
-        ExcelConverter<?> converter = null;
-        Class<? extends ExcelConverter<?>> converterClazz = multiPropertyAnnotation.converter();
-        if (converterClazz != null && converterClazz != DefaultExcelConverter.class) {
-            try {
-                converter = converterMap.get(converterClazz);
-                if (converter == null) {
-                    converter = converterClazz.getConstructor().newInstance();
-                    converterMap.put(converterClazz, converter);
-                }
-                // 更新目标对象
-                genericClass = ((ParameterizedTypeImpl) converterClazz.getGenericInterfaces()[0]).getActualTypeArguments()[0].getClass();
-            } catch (InstantiationException e) {
-                throw new RuntimeException(e);
-            } catch (IllegalAccessException e) {
-                throw new RuntimeException(e);
-            } catch (InvocationTargetException e) {
-                throw new RuntimeException(e);
-            } catch (NoSuchMethodException e) {
-                throw new RuntimeException("没有找到转换器的空参构造方法");
-            }
+        // 声明写入类型  默认为泛型  除非有转换器 才进行修改
+        Class<?> writeType = genericClass;
+
+        // 转换器解析
+        ExcelConverter<?, ?> converter = null;
+        Class<? extends ExcelConverter<?, ?>> converterClazz = multiPropertyAnnotation.converter();
+        if (converterClazz != DefaultExcelConverter.class) {
+            converter = getExcelConverter(converterClazz);
+            writeType = getUpdatedWriteType(field, converterClazz);
         }
 
         // 创建 propertyConfig 对象
@@ -209,7 +198,7 @@ public class ExcelParser {
                 .order(multiPropertyAnnotation.order())
                 .value(multiPropertyAnnotation.value())
                 .field(field)
-                .type(genericClass)
+                .writeType(writeType)
                 // 样式属性
                 .headCellStyleConfig(headStyle)
                 .contentCellStyleConfig(contentStyle)
@@ -252,26 +241,15 @@ public class ExcelParser {
             }
         }
 
-        ExcelConverter<?> converter = null;
-        Class<? extends ExcelConverter<?>> converterClazz = propertyAnnotation.converter();
-        if (converterClazz != null && converterClazz != DefaultExcelConverter.class) {
-            try {
-                converter = converterMap.get(converterClazz);
-                if (converter == null) {
-                    converter = converterClazz.getConstructor().newInstance();
-                    converterMap.put(converterClazz, converter);
-                }
-                // 更新目标对象
-                type = (Class) ((ParameterizedTypeImpl) converterClazz.getGenericInterfaces()[0]).getActualTypeArguments()[0];
-            } catch (InstantiationException e) {
-                throw new RuntimeException(e);
-            } catch (IllegalAccessException e) {
-                throw new RuntimeException(e);
-            } catch (InvocationTargetException e) {
-                throw new RuntimeException(e);
-            } catch (NoSuchMethodException e) {
-                throw new RuntimeException(e);
-            }
+        // 声明写入类型  默认为泛型  除非有转换器 才进行修改
+        Class<?> writeType = type;
+
+        // 解析器解析
+        ExcelConverter<?, ?> converter = null;
+        Class<? extends ExcelConverter<?, ?>> converterClazz = propertyAnnotation.converter();
+        if (converterClazz != DefaultExcelConverter.class) {
+            converter = getExcelConverter(converterClazz);
+            writeType = getUpdatedWriteType(field, converterClazz);
         }
 
         // 创建 propertyConfig 对象
@@ -280,7 +258,7 @@ public class ExcelParser {
                 .order(propertyAnnotation.order())
                 .value(propertyAnnotation.value())
                 .field(field)
-                .type(type)
+                .writeType(writeType)
                 // 样式属性
                 .headCellStyleConfig(headStyle)
                 .contentCellStyleConfig(contentStyle)
@@ -293,6 +271,47 @@ public class ExcelParser {
                 // 集合属性
                 .multi(hasMulti)
                 .build();
+    }
+
+    /**
+     * 根据 field 和 转换类 获取更新后的写入类型
+     *
+     * @param field          字段
+     * @param converterClazz 转换类
+     * @return 写入类型
+     */
+    private Class<?> getUpdatedWriteType(Field field, Class<? extends ExcelConverter<?, ?>> converterClazz) {
+        Class<?> writeType;// 更新目标对象
+        Type[] actualTypeArguments = ((ParameterizedTypeImpl) converterClazz.getGenericInterfaces()[0]).getActualTypeArguments();
+        Class<?> argClass = (Class<?>) actualTypeArguments[0]; // 参数类型  ExcelConverter<T,R> 中的 T
+        // 校验 当前属性类型 是否是 argClass 的子类(如果不是则会导致调用异常 解析时提前抛出)
+        if (!argClass.isAssignableFrom(field.getType())) {
+            throw new ParserException(field.getName() + " 无法使用转换器 " + converterClazz.getName() + " 进行转换. 类型不匹配. 转换器所需的类型: " + argClass.getName() + " 类及其子类" + ". 获取到的属性类型: " + field.getType());
+        }
+        writeType = (Class<?>) actualTypeArguments[1]; // // 参数类型  ExcelConverter<T,R> 中的 R
+        return writeType;
+    }
+
+    /**
+     * 获取转换器
+     *
+     * @param converterClazz 转换器类
+     * @return 转换器
+     */
+    private ExcelConverter<?, ?> getExcelConverter(Class<? extends ExcelConverter<?, ?>> converterClazz) {
+        ExcelConverter<?, ?> converter;
+        converter = converterMap.get(converterClazz);
+        if (converter == null) {
+            try {
+                converter = converterClazz.getConstructor().newInstance();
+            } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
+                e.printStackTrace();
+            } catch (NoSuchMethodException e) {
+                throw new ParserException("未找到转换器: " + converterClazz.getName() + " 的空参构造器");
+            }
+            converterMap.put(converterClazz, converter);
+        }
+        return converter;
     }
 
 
@@ -391,7 +410,7 @@ public class ExcelParser {
                 declaredConstructor = clazz.getDeclaredConstructor();
                 return declaredConstructor.newInstance();
             } catch (NoSuchMethodException | InvocationTargetException | InstantiationException |
-                     IllegalAccessException e) {
+                    IllegalAccessException e) {
                 throw new RuntimeException(clazz.getName() + "未获取到默认构造方法, 创建对象失败");
             }
         }

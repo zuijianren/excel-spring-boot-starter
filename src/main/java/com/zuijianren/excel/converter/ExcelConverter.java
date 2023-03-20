@@ -4,7 +4,7 @@ package com.zuijianren.excel.converter;
  * @author zuijianren
  * @date 2023/3/13 10:38
  */
-public interface ExcelConverter<T> {
+public interface ExcelConverter<T, R> {
 
-    T convert(Object obj);
+    R convert(T t);
 }

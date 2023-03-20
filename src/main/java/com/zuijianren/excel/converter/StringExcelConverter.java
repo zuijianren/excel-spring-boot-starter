@@ -6,11 +6,11 @@ package com.zuijianren.excel.converter;
  * @author zuijianren
  * @date 2023/3/13 10:38
  */
-public class StringExcelConverter implements ExcelConverter<String> {
+public class StringExcelConverter implements ExcelConverter<Integer, String> {
 
     @Override
-    public String convert(Object obj) {
-        return "318";
+    public String convert(Integer i) {
+        return i + "";
     }
 
     public StringExcelConverter() {

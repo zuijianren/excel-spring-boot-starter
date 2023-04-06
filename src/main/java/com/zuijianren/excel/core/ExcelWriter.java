@@ -221,12 +221,18 @@ public class ExcelWriter {
 
                 // 非嵌套对象
                 if (!propertyConfig.isNested()) {
-                    for (Object currentValue : collection) {
-                        // 写入多行数据
-                        writeCell(sheet, currentRowPosition++, colPosition, currentValue, propertyConfig.getWriteType(), cellStyle);
+                    if (collection == null) {
+                        // 写一行数据
+                        writeCell(sheet, currentRowPosition, colPosition, null, propertyConfig.getWriteType(), cellStyle);
+                        rowNumCount = Math.max(rowNumCount, 1);
+                    } else {
+                        for (Object currentValue : collection) {
+                            // 写入多行数据
+                            writeCell(sheet, currentRowPosition++, colPosition, currentValue, propertyConfig.getWriteType(), cellStyle);
+                        }
+                        colPosition++;
+                        rowNumCount = Math.max(rowNumCount, collection.size()); // 占多行
                     }
-                    colPosition++;
-                    rowNumCount = Math.max(rowNumCount, collection.size()); // 占多行
                 } else {
                     // 嵌套对象
 

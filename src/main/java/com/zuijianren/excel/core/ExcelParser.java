@@ -164,6 +164,15 @@ public class ExcelParser {
         AbstractCellStyleConfig headStyle = Optional.ofNullable(field.getAnnotation(ExcelHeadCellStyle.class)).map(this::parseExcelHeadCellStyle).orElse(null);
         AbstractCellStyleConfig contentStyle = Optional.ofNullable(field.getAnnotation(ExcelContentCellStyle.class)).map(this::parseExcelContentCellStyle).orElse(null);
 
+        // 根据 field 获取get方法
+        Method getMethod = null;
+        try {
+            getMethod = getGetMethod(field);
+        } catch (NoSuchMethodException e) {
+            throw new ParserException("未找到对应属性的get方法. 属性: " + field.getName());
+        }
+
+
         // 获取 注解 进行解析
         ExcelMultiProperty multiPropertyAnnotation = field.getAnnotation(ExcelMultiProperty.class);
 
@@ -198,6 +207,7 @@ public class ExcelParser {
                 .order(multiPropertyAnnotation.order())
                 .value(multiPropertyAnnotation.value())
                 .field(field)
+                .method(getMethod)
                 .writeType(writeType)
                 // 样式属性
                 .headCellStyleConfig(headStyle)
@@ -229,6 +239,15 @@ public class ExcelParser {
         AbstractCellStyleConfig headStyle = Optional.ofNullable(field.getAnnotation(ExcelHeadCellStyle.class)).map(this::parseExcelHeadCellStyle).orElse(null);
         AbstractCellStyleConfig contentStyle = Optional.ofNullable(field.getAnnotation(ExcelContentCellStyle.class)).map(this::parseExcelContentCellStyle).orElse(null);
 
+        // 根据 field 获取get方法
+        Method getMethod = null;
+        try {
+            getMethod = getGetMethod(field);
+        } catch (NoSuchMethodException e) {
+            throw new ParserException("未找到对应属性的get方法. 属性: " + field.getName(), e);
+        }
+
+
         // nested 属性解析
         List<PropertyConfig> childPropertyConfigList = null; // 子属性集合 (如果为内嵌属性, 则赋值)
         if (propertyAnnotation.nested()) {
@@ -258,6 +277,7 @@ public class ExcelParser {
                 .order(propertyAnnotation.order())
                 .value(propertyAnnotation.value())
                 .field(field)
+                .method(getMethod)
                 .writeType(writeType)
                 // 样式属性
                 .headCellStyleConfig(headStyle)
@@ -418,4 +438,10 @@ public class ExcelParser {
     }
 
 
+    private Method getGetMethod(Field field) throws NoSuchMethodException {
+        String fieldName = field.getName();
+        String methodName = "get" + fieldName.substring(0, 1).toUpperCase() + fieldName.substring(1);
+        Class<?> declaringClass = field.getDeclaringClass();
+        return declaringClass.getMethod(methodName);
+    }
 }

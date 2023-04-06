@@ -14,7 +14,8 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.*;
 
 import static com.zuijianren.excel.core.ExcelOperator.*;
@@ -197,8 +198,9 @@ public class ExcelWriter {
             ExcelConverter converter = propertyConfig.getConverter();
 
             // 获取 对应数据
-            Field field = propertyConfig.getField();
-            Object value = getValue(field, data, converter); // 获取填充数据
+//            Field field = propertyConfig.getField();
+            Method method = propertyConfig.getMethod();
+            Object value = getValue(method, data, converter); // 获取填充数据
 
             // 写入数据
             if (!propertyConfig.isMulti()) {
@@ -470,18 +472,20 @@ public class ExcelWriter {
     /**
      * 获取写入数据
      *
-     * @param field     属性
+     * @param method    方法
      * @param data      数据对象
      * @param converter 转换器
      * @return 写入数据
      */
-    private Object getValue(Field field, Object data, ExcelConverter converter) {
+    private Object getValue(Method method, Object data, ExcelConverter converter) {
         Object value = null;
         if (data != null) {
             try {
-                value = field.get(data); // 获取对应数据
+                value = method.invoke(data); // 获取对应数据
             } catch (IllegalAccessException e) {
                 e.printStackTrace(); // 忽略即可
+            } catch (InvocationTargetException e) {
+                e.printStackTrace();
             }
             if (converter != null) {
                 value = converter.convert(value);

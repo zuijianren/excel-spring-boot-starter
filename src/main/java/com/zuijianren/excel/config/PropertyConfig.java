@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.Comparator;
 import java.util.List;
 
@@ -60,6 +61,11 @@ public class PropertyConfig implements Comparable<PropertyConfig> {
      * 反射的字段对象
      */
     private Field field;
+
+    /**
+     * 反射字段的get方法
+     */
+    private Method method;
 
     /**
      * 转换器

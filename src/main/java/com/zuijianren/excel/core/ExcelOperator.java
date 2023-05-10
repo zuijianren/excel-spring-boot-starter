@@ -2,12 +2,16 @@ package com.zuijianren.excel.core;
 
 import com.zuijianren.excel.exceptions.WriteToCellException;
 import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.ClientAnchor;
 import org.apache.poi.ss.usermodel.RichTextString;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.util.CellRangeAddress;
-import org.apache.poi.xssf.usermodel.XSSFCell;
-import org.apache.poi.xssf.usermodel.XSSFRow;
-import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.*;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Calendar;
@@ -108,6 +112,51 @@ public class ExcelOperator {
     }
 
 
+    public static XSSFCell writeCell(XSSFSheet sheet, int rowPosition, int colPosition, BufferedImage image) {
+        XSSFRow row = sheet.getRow(rowPosition);
+        if (row == null) {
+            row = sheet.createRow(rowPosition);
+        }
+        XSSFCell cell = row.createCell(colPosition);
+
+
+        int imageHeight = image.getHeight();
+        int imageWidth = image.getWidth();
+
+        // 设置宽高
+        row.setHeight((short) (imageHeight * 20));
+        sheet.setColumnWidth(colPosition, (int) (imageWidth * 20 * 2.2));
+
+        // 获取字节数组
+        byte[] bytes;
+        try {
+            bytes = getBytes(image);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        // 创建一个绘图对象
+        XSSFDrawing drawing = sheet.createDrawingPatriarch();
+        ClientAnchor clientAnchor = new XSSFClientAnchor(0, 0, 0, 0, colPosition, rowPosition, colPosition, rowPosition);
+        clientAnchor.setAnchorType(ClientAnchor.AnchorType.MOVE_AND_RESIZE);
+
+        // 创建一个图片对象
+        int pictureIndex = sheet.getWorkbook().addPicture(bytes, Workbook.PICTURE_TYPE_PNG);
+        XSSFPicture picture = drawing.createPicture(clientAnchor, pictureIndex);
+        picture.resize(1, 1); // 相对于图像的当前大小调整图像的大小
+
+
+        return cell;
+    }
+
+    private static byte[] getBytes(BufferedImage image) throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ImageIO.write(image, "png", baos);
+        byte[] bytes = baos.toByteArray();
+        baos.close();
+        return bytes;
+    }
+
     /**
      * 写入 Object 对象的方法
      *
@@ -141,6 +190,8 @@ public class ExcelOperator {
             cell = writeCell(sheet, rowPosition, colPosition, (String) value);
         } else if (RichTextString.class.isAssignableFrom(type)) {
             cell = writeCell(sheet, rowPosition, colPosition, (RichTextString) value);
+        }  else if (BufferedImage.class.isAssignableFrom(type)) {
+            cell = writeCell(sheet, rowPosition, colPosition, (BufferedImage) value);
         } else {
             throw new WriteToCellException(type.getName());
         }
